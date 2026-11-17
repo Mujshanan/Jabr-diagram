@@ -8,7 +8,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
     "validate": "npm run typecheck && npm test && npm run build && npm run test:e2e"
   },
