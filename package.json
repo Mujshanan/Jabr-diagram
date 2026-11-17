@@ -1,0 +1,19 @@
+{
+  "name": "@jabr/draw-blocksuite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BlockSuite 0.19.5 Gfx block adapter prototype for Jabr Draw.",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@blocksuite/block-std": "0.19.5",
+    "@blocksuite/store": "0.19.5",
+    "@blocksuite/global": "0.19.5",
+    "lit": "^3.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
