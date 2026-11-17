@@ -24,7 +24,8 @@
     "@blocksuite/block-std": "0.19.5",
     "@blocksuite/store": "0.19.5",
     "@blocksuite/global": "0.19.5",
-    "lit": "3.2.1"
+    "lit": "3.2.1",
+    "@blocksuite/icons": "2.1.75"
   },
   "devDependencies": {
     "@playwright/test": "1.51.0",
