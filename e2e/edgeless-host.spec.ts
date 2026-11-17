@@ -394,8 +394,36 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
       }
     }, true);
   });
+  const [squareRoot, selectedRectRoot] = await Promise.all([
+    page.locator('jabr-square-gfx').first().evaluate(element => {
+      const root = element.getRootNode() as ShadowRoot;
+      return { type: root.constructor.name, host: root.host?.tagName ?? null };
+    }),
+    page.locator('edgeless-selected-rect').first().evaluate(element => {
+      const root = element.getRootNode() as ShadowRoot;
+      return { type: root.constructor.name, host: root.host?.tagName ?? null };
+    }),
+  ]);
+  await page.evaluate(() => {
+    (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace = [];
+    document.addEventListener('pointerdown', event => {
+      const path = event.composedPath().filter(node => node instanceof Element).map(node => {
+        const element = node as Element;
+        return element.tagName + '.' + (element.getAttribute('class') ?? '');
+      });
+      (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace!.push({
+        composed: event.composed,
+        target: (event.target as Element).tagName,
+        path,
+      });
+    }, true);
+  });
   await page.mouse.move(startX, startY);
   await page.mouse.down();
+  const pointerTrace = await page.evaluate(() =>
+    (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace
+  );
+  console.log('JABR_SHADOW_POINTER_TRACE', { squareRoot, selectedRectRoot, pointerTrace });
   await expect(
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
