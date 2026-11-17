@@ -100,16 +100,17 @@ const root = editor.std.get(EdgelessRootService);
 
 // Insert the sample Gfx blocks through the Edgeless layer service so each gets
 // a unique layer index and is registered in the surface's Gfx layer manager.
+const sampleIds: string[] = [];
 if (!root.blocks.some(model => model.flavour === 'jabr:square')) {
-  root.addBlock('jabr:square', {
+  sampleIds.push(root.addBlock('jabr:square', {
     xywh: '[80,80,150,150]', fill: '#e8f1ff', stroke: '#2563eb',
-  }, root.surface);
-  root.addBlock('jabr:square', {
+  }, root.surface));
+  sampleIds.push(root.addBlock('jabr:square', {
     xywh: '[280,130,150,150]', fill: '#fff1e6', stroke: '#c66a27', rotate: 12,
-  }, root.surface);
-  root.addBlock('jabr:square', {
+  }, root.surface));
+  sampleIds.push(root.addBlock('jabr:square', {
     xywh: '[500,70,150,150]', fill: '#e9f7ef', stroke: '#25845a', rotate: -8,
-  }, root.surface);
+  }, root.surface));
 }
 doc.resetHistory();
 
@@ -224,8 +225,9 @@ declare global {
       doc: Doc;
       editor: AffineEditorContainer;
       root: typeof root;
+      sampleIds: string[];
     };
   }
 }
-window.__jabrHost = { doc, editor, root };
+window.__jabrHost = { doc, editor, root, sampleIds };
 status.textContent = 'Ready · select a square, double-click its internal point to edit';
