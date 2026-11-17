@@ -15,8 +15,8 @@ export class JabrPropertiesPanel extends LitElement {
     input[type=color]{height:31px;padding:2px}.muted,.empty{color:var(--jabr-panel-muted,#737b87)}
     .identity{display:flex;justify-content:space-between;gap:8px}.tag{font-size:10px;color:var(--jabr-panel-muted,#737b87)}
   `;
-  @property({attribute:false}) accessor model: SquareBlockModel | null = null;
-  @property({attribute:false}) accessor onUpdate: ((patch: Partial<SquareBlockProps>)=>void) | undefined = undefined;
+  @property({attribute:false}) model: SquareBlockModel | null = null;
+  @property({attribute:false}) onUpdate: ((patch: Partial<SquareBlockProps>)=>void) | undefined = undefined;
 
   private geometry(): [number,number,number,number] {
     try { const v: unknown = JSON.parse(this.model?.xywh ?? '[0,0,160,160]');
@@ -70,8 +70,8 @@ export class JabrLayersPanel extends LitElement {
     .glyph{width:15px;color:var(--jabr-panel-muted,#737b87);text-align:center}.name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .type{margin-left:auto;color:var(--jabr-panel-muted,#8a919c);font-size:10px}.empty{padding:8px;color:var(--jabr-panel-muted,#737b87)}
   `;
-  @property({attribute:false}) accessor items:JabrLayerItem[]=[];
-  @property({attribute:false}) accessor onSelect:((id:string)=>void)|undefined=undefined;
+  @property({attribute:false}) items:JabrLayerItem[]=[];
+  @property({attribute:false}) onSelect:((id:string)=>void)|undefined=undefined;
   override render() {
     return html`<div class="panel"><h2>Layers</h2><div class="tree">
       ${this.items.length?this.items.map(item=>html`<button type="button" aria-current=${item.selected?'true':'false'}
