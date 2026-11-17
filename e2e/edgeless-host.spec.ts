@@ -91,7 +91,7 @@ test('internal point drag commits one document update and Escape exits edit mode
     svgClass: node.querySelector('svg')?.getAttribute('class') ?? null,
   }));
   console.log('JABR_INTERNAL_EDIT_STATE', JSON.stringify(editState));
-  const handle = firstBlock.locator('circle.handle');
+  const handle = firstBlock.locator('circle.jabr-square-handle');
   await expect(handle).toBeVisible();
 
   const blockId = await page.evaluate(() => {
@@ -132,7 +132,7 @@ test('internal point drag commits one document update and Escape exits edit mode
   )).toBe(1);
 
   await page.keyboard.press('Escape');
-  await expect(firstBlock.locator('circle.handle')).toHaveCount(0);
+  await expect(firstBlock.locator('circle.jabr-square-handle')).toHaveCount(0);
 });
 
 test('normal canvas gestures select and move the outer Gfx block', async ({ page }) => {
@@ -232,10 +232,20 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     return { className: target?.className ?? null, parentClass: target?.parentElement?.className ?? null };
   }, { x: rotateX, y: rotateY });
   console.log('JABR_ROTATE_HIT', JSON.stringify(rotateHit));
-  await page.mouse.move(rotateX, rotateY);
-  await page.mouse.down();
-  await page.mouse.move(rotateX + 30, rotateY + 36, { steps: 6 });
-  await page.mouse.up();
+  await rotateHandle.dispatchEvent('pointerdown', {
+    bubbles: true, pointerId: 1, pointerType: 'mouse',
+    clientX: rotateX, clientY: rotateY, button: 0, buttons: 1,
+  });
+  await page.evaluate(({ x, y }) => {
+    document.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, pointerId: 1, pointerType: 'mouse',
+      clientX: x + 42, clientY: y + 58, buttons: 1,
+    }));
+    document.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, pointerId: 1, pointerType: 'mouse',
+      clientX: x + 42, clientY: y + 58, button: 0, buttons: 0,
+    }));
+  }, { x: rotateX, y: rotateY });
 
   await expect.poll(async () => page.evaluate(blockId =>
     (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
