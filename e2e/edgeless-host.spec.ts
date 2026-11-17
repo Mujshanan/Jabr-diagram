@@ -389,7 +389,8 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     const model = window.__jabrHost!.doc.getBlockById(blockId);
     const view = widget.gfx.view.get(model);
     const managerHost = widget.gfx.std.host;
-    const viewport = window.__jabrHost!.root.viewport;
+    const viewport = widget.gfx.viewport;
+    const rootViewport = window.__jabrHost!.root.viewport;
     const selectedModel = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
     const [x, y, width, height] = JSON.parse(selectedModel.xywh) as number[];
     const modelStart = viewport.toModelCoordFromClientCoord([startX, startY]);
