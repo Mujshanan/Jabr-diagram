@@ -329,6 +329,15 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     return (JSON.parse(model.xywh) as number[])[2];
   }, id!)).toBeGreaterThan(beforeResize[2] + 10);
 
+  // Recenter after resizing so the rotation gesture and its full arc stay
+  // inside the Edgeless viewport rather than crossing the inspector overlay.
+  await page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
+    const [x, y, width, height] = JSON.parse(model.xywh) as number[];
+    const viewport = window.__jabrHost!.root.viewport;
+    viewport.setViewport(viewport.zoom, [x + width / 2, y + height / 2], false);
+  }, id!);
+
   const rotateHandle = page.locator('edgeless-selected-rect .affine-edgeless-selected-rect .handle[aria-label="top-right"] .rotate');
   await expect(rotateHandle).toBeVisible();
 
@@ -368,6 +377,7 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   expect(await page.evaluate(() => (window as Window & { __jabrRotatePointerDown?: boolean }).__jabrRotatePointerDown ?? false)).toBe(true);
+  await expect(page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')).toHaveAttribute('data-mode', 'rotate');
   await page.mouse.move(endX, endY, { steps: 8 });
   await page.mouse.up();
 
