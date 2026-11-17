@@ -47,8 +47,8 @@ export class JabrPropertiesPanel extends LitElement {
         ${this.number('Stroke width',m.strokeWidth,v=>this.onUpdate?.({strokeWidth:Math.max(0,v)}))}
       </div></section>
       <section class="section"><h2>Internal point</h2><div class="grid">
-        ${this.number('Handle X',m.handleX,v=>this.onUpdate?.({handleX:Math.min(99,Math.max(1,v))}))}
-        ${this.number('Handle Y',m.handleY,v=>this.onUpdate?.({handleY:Math.min(99,Math.max(1,v))}))}
+        ${this.number('Handle X',m.handlePoint[0],v=>this.onUpdate?.({handlePoint:[Math.min(99,Math.max(1,v)),m.handlePoint[1]]}))}
+        ${this.number('Handle Y',m.handlePoint[1],v=>this.onUpdate?.({handlePoint:[m.handlePoint[0],Math.min(99,Math.max(1,v))]}))}
       </div></section>
       <p class="muted">Edits are committed by the host through BlockSuite's document update API.</p>
     </div>`;
