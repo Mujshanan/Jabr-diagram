@@ -198,11 +198,13 @@ updateHistoryControls();
 shell.querySelector<HTMLButtonElement>('#undo')!.addEventListener('click', () => doc.undo());
 shell.querySelector<HTMLButtonElement>('#redo')!.addEventListener('click', () => doc.redo());
 bringForwardButton.addEventListener('click', () => {
-  const selected = root.selection.selectedElements[0];
+  const selectedId = root.selection.selectedIds[0];
+  const selected = root.blocks.find(model => model.id === selectedId);
   if (selected) root.reorderElement(selected, 'forward');
 });
 sendBackwardButton.addEventListener('click', () => {
-  const selected = root.selection.selectedElements[0];
+  const selectedId = root.selection.selectedIds[0];
+  const selected = root.blocks.find(model => model.id === selectedId);
   if (selected) root.reorderElement(selected, 'backward');
 });
 
