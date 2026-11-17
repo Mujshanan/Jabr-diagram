@@ -21,7 +21,11 @@ test('selects a layer and persists property edits through the BlockSuite documen
   });
   expect(initial).not.toBeNull();
 
-  await page.locator('jabr-properties-panel input[type="color"]').first().evaluate((node) => {\n    const input = node as HTMLInputElement;\n    input.value = '#123456';\n    input.dispatchEvent(new Event('input', { bubbles: true }));\n  });
+  await page.locator('jabr-properties-panel input[type="color"]').first().evaluate((node) => {
+    const input = node as HTMLInputElement;
+    input.value = '#123456';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   await expect.poll(async () => page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id);
     return (model as { fill?: string } | null)?.fill ?? null;
