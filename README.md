@@ -74,7 +74,7 @@ For this first spike, the square is one complete Gfx object:
 - Internal handle events stop propagation and use pointer capture.
 - Escape exits internal edit mode; Delete and Backspace are suppressed while the SVG editor surface is focused.
 - Clicking outside exits internal edit mode.
-- The point drag is committed once on pointerup, not on every pointermove.
+- The internal point is stored as one `handlePoint: [x, y]` property and committed once on pointerup, producing one atomic BlockSuite property update rather than separate X/Y updates.
 - Pointer cancellation discards the local draft.
 - The SVG uses a responsive 100-by-100 viewBox, explicit 100% width/height and non-scaling strokes.
 - Pointer coordinates are inverse-rotated into the square's model coordinate system before persistence.
@@ -107,7 +107,7 @@ npx playwright install chromium
 npm run validate
 ```
 
-Validation includes TypeScript, geometry unit tests, a production Vite build, and Playwright browser tests for host mounting, layer selection, property persistence, undo/redo, snapshot reload, insertion, outer movement/resizing/rotation, z-order, and internal point editing.
+Validation includes TypeScript, geometry unit tests, a production Vite build, and Playwright browser tests for host mounting, layer selection, property persistence, undo/redo, snapshot reload, insertion, outer movement/resizing/rotation, z-order, internal point editing, actual rotation dragging, zoomed pointer mapping, and pointer cancellation.
 
 ## Host-side panels
 
@@ -130,7 +130,7 @@ The automated checks do not replace live-editor validation. Before treating this
 6. Exactly one undo step for a completed point drag.
 7. Appearance changes through `updateAppearance()`, including undo/redo and collaboration.
 8. Pointer capture, Escape, outside click and pointercancel behavior.
-9. Correct pointer mapping at multiple zoom levels and rotation angles.
+9. Correct pointer mapping at multiple zoom levels and rotation angles (covered by browser tests).
 10. Light/dark theme mapping, copy/paste and save/reload.
 
 ## Scope
