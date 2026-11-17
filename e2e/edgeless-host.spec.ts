@@ -377,6 +377,23 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   const endX = centerX + Math.cos(endAngle) * radius;
   const endY = centerY + Math.sin(endAngle) * radius;
 
+  await page.evaluate(() => {
+    document.addEventListener('pointerdown', event => {
+      const path = event.composedPath();
+      const hasRotateClass = path.some(
+        target => target instanceof Element && target.classList.contains('rotate')
+      );
+      if (hasRotateClass) {
+        console.log('JABR_ROTATE_EVENT_PATH', {
+          path: path.map(target => target instanceof Element
+            ? { tag: target.tagName, className: target.className?.toString?.() ?? '' }
+            : String(target)),
+          selectionIds: window.__jabrHost?.root.selection.selectedIds ?? [],
+          stdSelection: window.__jabrHost?.editor.std.selection.value.map(selection => selection.blockId),
+        });
+      }
+    }, true);
+  });
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await expect(
