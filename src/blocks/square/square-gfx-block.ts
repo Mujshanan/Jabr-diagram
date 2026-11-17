@@ -15,10 +15,10 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       display: block;
       overflow: visible;
       user-select: none;
-      --jabr-draw-square-fill: #e8f1ff;
-      --jabr-draw-square-stroke: #2563eb;
-      --jabr-draw-square-handle: #1d4ed8;
-      --jabr-draw-selection: #2563eb;
+      --jabr-draw-square-fill: var(--affine-background-primary-color, #e8f1ff);
+      --jabr-draw-square-stroke: var(--affine-primary-color, #2563eb);
+      --jabr-draw-square-handle: var(--affine-primary-color, #1d4ed8);
+      --jabr-draw-selection: var(--affine-primary-color, #2563eb);
     }
 
     svg {
@@ -60,7 +60,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     }
 
     .hint {
-      fill: currentColor;
+      fill: var(--affine-text-primary-color, currentColor);
       font: 4px sans-serif;
       opacity: 0.75;
       pointer-events: none;
