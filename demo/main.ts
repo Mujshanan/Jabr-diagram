@@ -120,7 +120,7 @@ const updateHistoryControls = () => {
 
 const refreshPanels = () => {
   const squares = root.blocks.filter(
-    (model): model is SquareBlockModel => model.flavour === 'jabr:square'
+    (model): model is SquareBlockModel => (doc.getBlockById(model.id) as unknown as { flavour?: string } | null)?.flavour === 'jabr:square'
   );
   const selectedId = root.selection.selectedIds[0];
   const selected = root.blocks.find(
@@ -192,7 +192,7 @@ shell.querySelector<HTMLButtonElement>('#undo')!.addEventListener('click', () =>
 shell.querySelector<HTMLButtonElement>('#redo')!.addEventListener('click', () => doc.redo());
 
 shell.querySelector<HTMLButtonElement>('#add-square')!.addEventListener('click', () => {
-  const count = root.blocks.filter(model => model.flavour === 'jabr:square').length;
+  const count = root.blocks.filter(model => (model as unknown as { flavour?: string }).flavour === 'jabr:square').length;
   const id = root.addBlock('jabr:square', {
     xywh: `[${100 + count * 38},${280 + count * 28},150,150]`,
     fill: '#e8f1ff',
