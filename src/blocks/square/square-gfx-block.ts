@@ -148,9 +148,15 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     if (!isRotateHandle) return;
 
     const selections = this.std.selection.value;
-    if (selections.length !== 1 || selections[0]?.blockId !== this.model.id) {
-      return;
-    }
+    const selectionIds = selections.map(selection => selection.blockId);
+    const isSelected = selectionIds.includes(this.model.id);
+    console.log('JABR_ROTATION_BRIDGE_POINTERDOWN', {
+      modelId: this.model.id,
+      selectionIds,
+      isSelected,
+      pointerId: event.pointerId,
+    });
+    if (!isSelected) return;
 
     const [x, y, width, height] = JSON.parse(this.model.xywh) as number[];
     const center = { x: x + width / 2, y: y + height / 2 };
