@@ -1,9 +1,8 @@
 import { AffineSchemas, EdgelessRootService } from '@blocksuite/blocks';
 import { effects as blocksEffects } from '@blocksuite/blocks/effects';
-import { AffineEditorContainer, effects as presetsEffects } from '@blocksuite/presets';
+import { AffineEditorContainer } from '@blocksuite/presets';
 import { effects as presetEffects } from '@blocksuite/presets/effects';
 import { Schema, DocCollection, Text } from '@blocksuite/store';
-import { html, render } from 'lit';
 
 import { SquareBlockSchema, SquareBlockSpec, type SquareBlockModel } from '../src/blocks/square/index.js';
 import '../src/panels/index.js';
@@ -12,7 +11,6 @@ import type { JabrLayerItem, JabrPropertiesPanel, JabrLayersPanel } from '../src
 import './styles.css';
 
 blocksEffects();
-presetsEffects();
 presetEffects();
 
 const schema = new Schema().register([...AffineSchemas, SquareBlockSchema]);
