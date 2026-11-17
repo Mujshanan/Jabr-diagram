@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
+  timeout: 15_000,
+  expect: { timeout: 4_000 },
   reporter: 'list',
   use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:4173' },
   webServer: {
