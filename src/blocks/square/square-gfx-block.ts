@@ -26,8 +26,11 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       width: 100%;
       height: 100%;
       overflow: visible;
-      touch-action: none;
       outline: none;
+    }
+
+    svg.editing {
+      touch-action: none;
     }
 
     .square {
@@ -208,6 +211,15 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     };
   };
 
+  private _onLostPointerCapture = (event: PointerEvent) => {
+    if (this._activePointerId !== event.pointerId) return;
+    this._activePointerId = null;
+    this._draft = {
+      x: this.model.handleX,
+      y: this.model.handleY,
+    };
+  };
+
   override renderGfxBlock() {
     const { fill, stroke, strokeWidth } = this.model;
     const point = this._editing
@@ -216,7 +228,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
 
     return html`
       <svg
-        viewBox="0 0 100 100"
+        class=${this._editing ? "editing" : ""}\n        viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="Jabr interactive square"
@@ -225,7 +237,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
         @pointerdown=${this._onPointerDown}
         @pointermove=${this._onPointerMove}
         @pointerup=${this._onPointerUp}
-        @pointercancel=${this._onPointerCancel}
+        @pointercancel=${this._onPointerCancel}\n        @lostpointercapture=${this._onLostPointerCapture}
       >
         <rect
           class="square"
