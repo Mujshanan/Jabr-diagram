@@ -8,7 +8,7 @@ Prove that Jabr Draw can provide one custom engineering-figure object to BlockSu
 
 The `jabr:square` model extends BlockSuite's `GfxCompatible` model wrapper and implements the Gfx geometry contract. Its `xywh`, index, rotation and lock state describe the outer Gfx object. Square-specific persistent properties are fill, stroke, stroke width and an internal editable point.
 
-The component extends BlockSuite's `GfxBlockComponent`. BlockSuite owns outer selection, movement, resizing, rotation, z-order and document lifecycle. Jabr owns the SVG content and its internal editing behavior.
+The `jabr-square-gfx` custom element is registered with Lit and its view is mapped by `BlockViewExtension`. The component extends BlockSuite's `GfxBlockComponent`. BlockSuite owns outer selection, movement, resizing, rotation, z-order and document lifecycle. Jabr owns the SVG content and its internal editing behavior.
 
 ## Interaction lifecycle
 
