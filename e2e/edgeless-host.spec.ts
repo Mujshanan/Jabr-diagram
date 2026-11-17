@@ -385,23 +385,44 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     modelBefore: rotationBefore,
   });
   await page.evaluate(() => {
+    const editor = window.__jabrHost!.editor;
+    const stdHost = (editor.std as unknown as { host: EventTarget }).host;
     const host = document.querySelector('affine-editor-container');
     if (!host) throw new Error('Edgeless host not found');
-    (window as Window & { __jabrRotateTrace?: { hostCapture: number; hostBubble: number; documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean } }).__jabrRotateTrace = {
-      hostCapture: 0, hostBubble: 0, documentCapture: 0, documentBubble: 0, lastTarget: '', cancelBubble: false,
+    (window as Window & { __jabrRotateTrace?: {
+      editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
+      documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean;
+      stdHostTag: string; stdHostIsEditor: boolean;
+    } }).__jabrRotateTrace = {
+      editorHostCapture: 0, editorHostBubble: 0, stdHostCapture: 0, stdHostBubble: 0,
+      documentCapture: 0, documentBubble: 0, lastTarget: '', cancelBubble: false,
+      stdHostTag: (stdHost as Element).tagName ?? stdHost.constructor.name,
+      stdHostIsEditor: stdHost === editor,
     };
-    const trace = (window as Window & { __jabrRotateTrace?: { hostCapture: number; hostBubble: number; documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean } }).__jabrRotateTrace!;
+    const trace = (window as Window & { __jabrRotateTrace?: {
+      editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
+      documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean;
+      stdHostTag: string; stdHostIsEditor: boolean;
+    } }).__jabrRotateTrace!;
     const record = (event: PointerEvent) => {
       trace.lastTarget = (event.target as Element)?.tagName ?? '';
       trace.cancelBubble = event.cancelBubble;
     };
     host.addEventListener('pointermove', event => {
-      trace.hostCapture += 1;
+      trace.editorHostCapture += 1;
       record(event);
     }, true);
     host.addEventListener('pointermove', event => {
-      trace.hostBubble += 1;
+      trace.editorHostBubble += 1;
       record(event);
+    }, false);
+    stdHost.addEventListener('pointermove', event => {
+      trace.stdHostCapture += 1;
+      record(event as PointerEvent);
+    }, true);
+    stdHost.addEventListener('pointermove', event => {
+      trace.stdHostBubble += 1;
+      record(event as PointerEvent);
     }, false);
     document.addEventListener('pointermove', event => {
       trace.documentCapture += 1;
@@ -437,7 +458,11 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
       (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
     id!));
   }
-  const trace = await page.evaluate(() => (window as Window & { __jabrRotateTrace?: { hostCapture: number; hostBubble: number; documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean } }).__jabrRotateTrace);
+  const trace = await page.evaluate(() => (window as Window & { __jabrRotateTrace?: {
+    editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
+    documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean;
+    stdHostTag: string; stdHostIsEditor: boolean;
+  } }).__jabrRotateTrace);
   console.log('JABR_ROTATE_POINTER_TRACE', { trace, rotationMath, rotationSamples });
   await page.mouse.up();
 
