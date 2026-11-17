@@ -130,6 +130,16 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     );
   }
 
+  /**
+   * Persist appearance changes through BlockSuite/Yjs so they survive reload
+   * and are visible to collaborating clients.
+   */
+  updateAppearance(
+    patch: Partial<Pick<SquareBlockModel, 'fill' | 'stroke' | 'strokeWidth'>>
+  ) {
+    this.doc.updateBlock(this.model, patch);
+  }
+
   private _onDoubleClick = (event: MouseEvent) => {
     event.stopPropagation();
     event.preventDefault();
@@ -243,6 +253,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     return html`
       <svg
         class=${this._editing ? "editing" : ""}
+        width="100%"
+        height="100%"
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
         role="img"
