@@ -131,6 +131,13 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
     return model?.handleY ?? null;
   }, blockId!)).not.toBe(before!.y);
 
+  // The SVG handle should remain under the pointer even after viewport zoom
+  // and inverse rotation are applied.
+  const movedHandleBounds = await handle.boundingBox();
+  expect(movedHandleBounds).not.toBeNull();
+  expect(Math.abs((movedHandleBounds!.x + movedHandleBounds!.width / 2) - targetX)).toBeLessThan(3);
+  expect(Math.abs((movedHandleBounds!.y + movedHandleBounds!.height / 2) - targetY)).toBeLessThan(3);
+
   const after = await page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
       handleX: number; handleY: number; xywh: string;
