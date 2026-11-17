@@ -91,6 +91,15 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
 
   const blockId = await page.evaluate(() => window.__jabrHost?.root.selection.selectedIds[0] ?? null);
   expect(blockId).not.toBeNull();
+  await page.evaluate(id => {
+    const host = window.__jabrHost!;
+    (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount = 0;
+    host.doc.slots.blockUpdated.on(payload => {
+      if (payload.id === id && payload.type === 'update') {
+        (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount! += 1;
+      }
+    });
+  }, blockId!);
 
   // Exercise the real Edgeless viewport zoom rather than a CSS-only scale.
   await page.evaluate(id => {
@@ -159,8 +168,11 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   expect(after).not.toBeNull();
   expect(after!.xywh).toBe(before!.xywh);
 
-  // A completed two-coordinate gesture must undo and redo as one logical edit.
-  // blockUpdated is a property-change notification, not a transaction counter.
+  // The point pair is one schema property, so one completed drag emits one
+  // block update and is recorded as one undoable edit.
+  await expect.poll(async () => page.evaluate(() =>
+    (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount ?? 0
+  )).toBe(1);
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect.poll(async () => page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
