@@ -24,13 +24,13 @@ presetEffects();
 const STORAGE_KEY = 'jabr-draw-edgeless-phase1';
 const extendedSurfaceSchema = {
   ...SurfaceBlockSchema,
-  metadata: {
-    ...SurfaceBlockSchema.metadata,
-    children: [...SurfaceBlockSchema.metadata.children, 'jabr:square'],
+  model: {
+    ...SurfaceBlockSchema.model,
+    children: [...SurfaceBlockSchema.model.children, 'jabr:square'],
   },
 };
 const schema = new Schema().register([
-  ...AffineSchemas.filter(item => item.flavour !== 'affine:surface'),
+  ...AffineSchemas.filter(item => item.model.flavour !== 'affine:surface'),
   extendedSurfaceSchema,
   SquareBlockSchema,
 ]);
