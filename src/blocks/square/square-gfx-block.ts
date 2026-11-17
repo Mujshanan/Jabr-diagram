@@ -1,7 +1,7 @@
 import type { SquareBlockModel } from './square-model.js';
 
 import { GfxBlockComponent } from '@blocksuite/block-std';
-import { css, html } from 'lit';
+import { css, svg } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
 import { toSquareModelPoint, type SquarePoint } from './square-geometry.js';
@@ -273,7 +273,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       ? this._draft
       : { x: this.model.handleX, y: this.model.handleY };
 
-    return html`
+    return svg`
       <svg
         class=${this._editing ? 'editing' : ''}
         width="100%"
@@ -303,7 +303,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
             stroke-width=${strokeWidth}
           ></rect>
           ${this._editing
-            ? html`
+            ? svg`
                 <rect
                   class="edit-outline"
                   x="1"
@@ -320,7 +320,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
                 ></circle>
                 <text class="hint" x="3" y="7">Drag point · Esc to finish</text>
               `
-            : html`
+            : svg`
                 <circle
                   cx=${point.x}
                   cy=${point.y}
