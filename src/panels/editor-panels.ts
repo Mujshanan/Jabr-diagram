@@ -31,7 +31,7 @@ export class JabrPropertiesPanel extends LitElement {
   private color(value:string,fallback:string) { return /^#[0-9a-f]{6}$/i.test(value)?value:fallback; }
   override render() {
     const m=this.model;
-    if(!m) return html`<div class="empty" style="padding:16px">Select a Jabr square to inspect its properties.</div>`;
+    if(!m) return html`<div class="panel"><div class="identity"><h2>Properties</h2></div><div class="empty" style="padding:8px 0">Select a Jabr square to inspect its properties.</div></div>`;
     const [x,y,w,h]=this.geometry();
     return html`<div class="panel">
       <div class="identity"><h2>Properties</h2><span class="tag">jabr:square</span></div>
