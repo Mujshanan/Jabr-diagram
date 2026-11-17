@@ -2,21 +2,68 @@ import { AffineSchemas, EdgelessRootService } from '@blocksuite/blocks';
 import { effects as blocksEffects } from '@blocksuite/blocks/effects';
 import { AffineEditorContainer } from '@blocksuite/presets';
 import { effects as presetEffects } from '@blocksuite/presets/effects';
-import { Schema, DocCollection, Text } from '@blocksuite/store';
+import { DocCollection, Job, Schema, Text } from '@blocksuite/store';
 
-import { SquareBlockSchema, SquareBlockSpec, type SquareBlockModel } from '../src/blocks/square/index.js';
+import {
+  SquareBlockSchema,
+  SquareBlockSpec,
+  type SquareBlockModel,
+} from '../src/blocks/square/index.js';
 import '../src/panels/index.js';
-import type { JabrLayerItem, JabrPropertiesPanel, JabrLayersPanel } from '../src/panels/editor-panels.js';
+import type {
+  JabrLayerItem,
+  JabrLayersPanel,
+  JabrPropertiesPanel,
+} from '../src/panels/editor-panels.js';
 
 import './styles.css';
 
 blocksEffects();
 presetEffects();
 
+const STORAGE_KEY = 'jabr-draw-edgeless-phase1';
 const schema = new Schema().register([...AffineSchemas, SquareBlockSchema]);
 const collection = new DocCollection({ schema });
 collection.meta.initialize();
-const doc = collection.createDoc();
+const job = new Job({ collection });
+
+const savedSnapshot = localStorage.getItem(STORAGE_KEY);
+let doc;
+if (savedSnapshot) {
+  try {
+    doc = await job.snapshotToDoc(JSON.parse(savedSnapshot));
+  } catch (error) {
+    console.warn('Could not restore the saved Jabr Draw test document; starting a fresh one.', error);
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
+if (!doc) {
+  doc = collection.createDoc();
+  await doc.load(() => {
+    const pageId = doc.addBlock('affine:page', {
+      title: new Text('Jabr Draw test surface'),
+    });
+    const surfaceId = doc.addBlock('affine:surface', {}, pageId);
+    doc.addBlock('jabr:square', {
+      xywh: '[80,80,150,150]',
+      fill: '#e8f1ff',
+      stroke: '#2563eb',
+    }, surfaceId);
+    doc.addBlock('jabr:square', {
+      xywh: '[280,130,150,150]',
+      fill: '#fff1e6',
+      stroke: '#c66a27',
+      rotate: 12,
+    }, surfaceId);
+    doc.addBlock('jabr:square', {
+      xywh: '[500,70,150,150]',
+      fill: '#e9f7ef',
+      stroke: '#25845a',
+      rotate: -8,
+    }, surfaceId);
+  });
+}
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app mount element');
@@ -28,6 +75,8 @@ shell.innerHTML = `
     <div class="brand"><span class="brand-mark">J</span><div><strong>Jabr Draw</strong><small>BlockSuite integration host</small></div></div>
     <div class="toolbar">
       <span class="mode-label">EDGELESS TEST ENVIRONMENT</span>
+      <button id="undo" type="button" class="quiet">Undo</button>
+      <button id="redo" type="button" class="quiet">Redo</button>
       <button id="add-square" type="button">＋ Add square</button>
       <button id="fit-view" type="button" class="quiet">Fit view</button>
     </div>
@@ -37,7 +86,7 @@ shell.innerHTML = `
     <section class="canvas-area"><div class="canvas-label">INFINITE CANVAS · BLOCKSUITE 0.19.5</div><div id="editor-mount"></div></section>
     <aside class="side-panel properties-panel"><jabr-properties-panel></jabr-properties-panel></aside>
   </section>
-  <footer class="statusbar"><span id="status">Preparing document…</span><span>Jabr Draw prototype · Edgeless only</span></footer>
+  <footer class="statusbar"><span id="status">Preparing document…</span><span>Local snapshot persistence · Jabr Draw prototype</span></footer>
 `;
 app.replaceChildren(shell);
 
@@ -53,30 +102,38 @@ editorMount.append(editor);
 const properties = shell.querySelector<JabrPropertiesPanel>('jabr-properties-panel')!;
 const layers = shell.querySelector<JabrLayersPanel>('jabr-layers-panel')!;
 const status = shell.querySelector<HTMLSpanElement>('#status')!;
+const undoButton = shell.querySelector<HTMLButtonElement>('#undo')!;
+const redoButton = shell.querySelector<HTMLButtonElement>('#redo')!;
 
-await doc.load(() => {
-  const pageId = doc.addBlock('affine:page', { title: new Text('Jabr Draw test surface') });
-  const surfaceId = doc.addBlock('affine:surface', {}, pageId);
-  doc.addBlock('jabr:square', { xywh: '[80,80,150,150]', fill: '#e8f1ff', stroke: '#2563eb' }, surfaceId);
-  doc.addBlock('jabr:square', { xywh: '[280,130,150,150]', fill: '#fff1e6', stroke: '#c66a27', rotate: 12 }, surfaceId);
-  doc.addBlock('jabr:square', { xywh: '[500,70,150,150]', fill: '#e9f7ef', stroke: '#25845a', rotate: -8 }, surfaceId);
-});
-doc.resetHistory();
 await editor.updateComplete;
-
 const root = editor.std.get(EdgelessRootService);
+
+const updateHistoryControls = () => {
+  undoButton.disabled = !doc.canUndo;
+  redoButton.disabled = !doc.canRedo;
+};
+
 const refreshPanels = () => {
-  const squares = root.blocks.filter((model): model is SquareBlockModel => model.flavour === 'jabr:square');
-  const selected = root.selection.selectedElements.find((model): model is SquareBlockModel => model.flavour === 'jabr:square') ?? null;
+  const squares = root.blocks.filter(
+    (model): model is SquareBlockModel => model.flavour === 'jabr:square'
+  );
+  const selected = root.selection.selectedElements.find(
+    (model): model is SquareBlockModel => model.flavour === 'jabr:square'
+  ) ?? null;
 
   properties.model = selected;
   properties.onUpdate = patch => {
-    if (!selected) return;
-    doc.updateBlock(selected, patch);
+    if (selected) doc.updateBlock(selected, patch);
   };
 
   const rows: JabrLayerItem[] = [
-    { id: root.surface.id, label: 'Surface', flavour: 'affine:surface', depth: 0, kind: 'surface' },
+    {
+      id: root.surface.id,
+      label: 'Surface',
+      flavour: 'affine:surface',
+      depth: 0,
+      kind: 'surface',
+    },
     ...squares.map((model, index) => ({
       id: model.id,
       label: `Square ${index + 1}`,
@@ -91,14 +148,40 @@ const refreshPanels = () => {
     if (id === root.surface.id) root.selection.clear();
     else root.selection.set({ elements: [id], editing: false });
   };
+
   properties.requestUpdate();
   layers.requestUpdate();
-  status.textContent = selected ? `Selected ${selected.id.slice(0, 8)} · ${squares.length} squares` : `${squares.length} squares · nothing selected`;
+  status.textContent = selected
+    ? `Selected ${selected.id.slice(0, 8)} · ${squares.length} squares`
+    : `${squares.length} squares · nothing selected`;
+  updateHistoryControls();
+};
+
+let saveTimer: number | undefined;
+const scheduleSnapshotSave = () => {
+  if (saveTimer !== undefined) window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(async () => {
+    try {
+      const snapshot = await job.docToSnapshot(doc);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      status.textContent = 'Saved locally · ' + new Date().toLocaleTimeString();
+    } catch (error) {
+      console.error('Failed to save the Jabr Draw test document.', error);
+      status.textContent = 'Local save failed · see browser console';
+    }
+  }, 180);
 };
 
 root.selection.slots.updated.subscribe(refreshPanels);
-doc.slots.blockUpdated.subscribe(refreshPanels);
+doc.slots.blockUpdated.subscribe(() => {
+  refreshPanels();
+  scheduleSnapshotSave();
+});
 refreshPanels();
+updateHistoryControls();
+
+shell.querySelector<HTMLButtonElement>('#undo')!.addEventListener('click', () => doc.undo());
+shell.querySelector<HTMLButtonElement>('#redo')!.addEventListener('click', () => doc.redo());
 
 shell.querySelector<HTMLButtonElement>('#add-square')!.addEventListener('click', () => {
   const count = root.blocks.filter(model => model.flavour === 'jabr:square').length;
@@ -110,13 +193,18 @@ shell.querySelector<HTMLButtonElement>('#add-square')!.addEventListener('click',
   root.selection.set({ elements: [id], editing: false });
 });
 
-shell.querySelector<HTMLButtonElement>('#fit-view')!.addEventListener('click', () => root.zoomToFit());
+shell.querySelector<HTMLButtonElement>('#fit-view')!.addEventListener('click', () => {
+  root.zoomToFit();
+});
 
 declare global {
   interface Window {
-    __jabrHost?: { doc: typeof doc; editor: AffineEditorContainer; root: typeof root };
+    __jabrHost?: {
+      doc: typeof doc;
+      editor: AffineEditorContainer;
+      root: typeof root;
+    };
   }
 }
 window.__jabrHost = { doc, editor, root };
-
-status.textContent = 'Ready · select a square, then double-click its internal point to edit';
+status.textContent = 'Ready · select a square, double-click its internal point to edit';
