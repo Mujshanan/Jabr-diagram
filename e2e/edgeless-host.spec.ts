@@ -2,6 +2,26 @@ import { expect, test } from '@playwright/test';
 
 test('mounts the BlockSuite Edgeless host and the three starter squares', async ({ page }) => {
   await page.goto('/');
+  const diagnostics = await page.evaluate(() => {
+    const host = window.__jabrHost!;
+    return {
+      sampleIds: host.sampleIds,
+      rootBlockIds: host.root.blocks.map(model => model.id),
+      surfaceId: host.root.surface.id,
+      models: host.sampleIds.map(id => {
+        const model = host.doc.getBlockById(id);
+        const parent = model ? host.doc.getParent(model) : null;
+        return {
+          id,
+          flavour: model?.flavour ?? null,
+          modelType: model?.constructor.name ?? null,
+          parentFlavour: parent?.flavour ?? null,
+          parentType: parent?.constructor.name ?? null,
+        };
+      }),
+    };
+  });
+  console.log('JABR_EDGELESS_DIAGNOSTICS', JSON.stringify(diagnostics));
   await expect(page.locator('affine-editor-container')).toBeVisible();
   await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
   await expect(page.getByText('Layers', { exact: true })).toBeVisible();
