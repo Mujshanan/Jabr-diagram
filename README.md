@@ -10,7 +10,7 @@ The first host-integration spike is a **square Gfx block** for BlockSuite **0.19
 - `jabr-square-gfx` is a `GfxBlockComponent` that renders the square as SVG.
 - BlockSuite owns the outer object's selection, movement, rotation, resizing, layer order and document lifecycle.
 - Jabr supplies the SVG appearance, internal edit interaction and persistent style properties.
-- The pointer-to-model coordinate conversion accounts for the square's visual rotation.
+- Pointer-to-model coordinate conversion accounts for the square's visual rotation.
 
 This is deliberately a host-integration spike, not yet the complete Jabr Draw engine or a standalone demo application.
 
@@ -27,23 +27,43 @@ Install this package in the same dependency graph as the host editor. Do not ins
 
 ## Registering the block
 
-Register both parts using the BlockSuite 0.19.5 APIs:
+Register the schema alongside the host's existing schemas, before creating the collection:
 
 ```ts
 const schema = new Schema().register([
-  // the host's existing schemas
+  ...AffineSchemas,
   SquareBlockSchema,
 ]);
-const collection = new DocCollection({ id: 'jabr', schema });
+const collection = new DocCollection({ schema });
+```
+
+Add the view spec to the host's **existing Edgeless extension set**. Do not replace the host's normal extensions with this one extension:
+
+```ts
 const std = new BlockStdScope({
-  doc,
-  extensions: [...SquareBlockSpec],
+  store: doc,
+  extensions: [
+    ...hostEdgelessExtensions,
+    ...SquareBlockSpec,
+  ],
 });
 ```
 
-Register the schema before creating the `DocCollection`; register the view extension in the `BlockStdScope`. BlockSuite 0.19.5 does not use the newer `BlockSchemaExtension` API. Exports are available from `src/index.ts`; the host application remains responsible for its editor bootstrap.
+The exact extension composition depends on the host editor. The host must already provide its normal Edgeless services, viewport, surface and selection extensions. `SquareBlockSpec` only registers the custom view.
 
 The block's schema declares `affine:surface` as its parent. It is therefore intended for an Edgeless surface, not as a normal page-flow content block.
+
+To insert a square into an initialized page:
+
+```ts
+doc.load(() => {
+  const pageId = doc.addBlock('affine:page', {
+    title: new Text('Gfx prototype'),
+  });
+  const surfaceId = doc.addBlock('affine:surface', {}, pageId);
+  doc.addBlock('jabr:square', {}, surfaceId);
+});
+```
 
 ## Interaction boundary
 

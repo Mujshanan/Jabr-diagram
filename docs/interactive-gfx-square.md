@@ -38,7 +38,7 @@ The SVG is content inside the Gfx wrapper; it must not write its display dimensi
 
 Pointer positions are converted from client/screen coordinates through `getScreenCTM().inverse()` and `createSVGPoint()`, rather than `offsetX/offsetY`. This accounts for CSS scaling, host zoom and high-DPI displays.
 
-The SVG content is rotated around its 50,50 center. The resulting SVG-local pointer coordinate is inverse-rotated before it is stored in the model's unrotated 0..100 coordinate space. This keeps the handle attached to the pointer when the Gfx object is rotated.
+The SVG content is rotated around its 50,50 center. The resulting SVG-local pointer coordinate is inverse-rotated before it is stored in the model's unrotated 0..100 coordinate space. This keeps the handle attached to the pointer when the Gfx object is rotated. The inverse-rotation helper is unit-tested at zero, 90-degree and arbitrary angles.
 
 ## Styling and light DOM
 
