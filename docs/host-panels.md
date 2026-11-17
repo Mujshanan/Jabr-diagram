@@ -4,7 +4,7 @@ Jabr Draw exports two optional Lit components from `src/panels/editor-panels.ts`
 
 ## Properties panel
 
-`<jabr-properties-panel>` displays the selected square's outer transform, appearance, and internal handle coordinates. The host supplies its `model` and an `onUpdate(patch)` callback. The callback must persist patches through `doc.updateBlock(selectedModel, patch)`.
+`<jabr-properties-panel>` displays the selected square's outer transform, appearance, and internal handle coordinates. The point is persisted as a single `handlePoint: [x, y]` property so editing either coordinate updates the pair atomically. The host supplies its `model` and an `onUpdate(patch)` callback. The callback must persist patches through `doc.updateBlock(selectedModel, patch)`.
 
 ```ts
 propertiesPanel.model = selectedSquare;
