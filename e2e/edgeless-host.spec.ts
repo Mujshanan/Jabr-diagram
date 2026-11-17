@@ -105,8 +105,7 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   await page.evaluate(id => {
     const model = window.__jabrHost!.doc.getBlockById(id) as unknown as { xywh: string };
     const [x, y, width, height] = JSON.parse(model.xywh) as number[];
-    const viewport = widget.gfx.viewport;
-    const rootViewport = window.__jabrHost!.root.viewport;
+    const viewport = window.__jabrHost!.root.viewport;
     // Keep the selected square in the canvas area (not underneath the
     // inspector panel) while applying a real viewport zoom.
     viewport.setViewport(1.25, [x + width / 2, y + height / 2], false);
