@@ -105,3 +105,53 @@ test('internal point drag commits one document update and Escape exits edit mode
   await page.keyboard.press('Escape');
   await expect(firstBlock.locator('circle.handle')).toHaveCount(0);
 });
+
+test('normal canvas gestures select and move the outer Gfx block', async ({ page }) => {
+  await page.goto('/');
+  const block = page.locator('jabr-square-gfx').first();
+  const id = await page.evaluate(() =>
+    window.__jabrHost?.root.blocks.find(model => model.flavour === 'jabr:square')?.id ?? null
+  );
+  expect(id).not.toBeNull();
+
+  const before = await page.evaluate(blockId => {
+    const model = window.__jabrHost?.doc.getBlockById(blockId) as unknown as { xywh: string } | null;
+    return model ? JSON.parse(model.xywh) as number[] : null;
+  }, id!);
+  const bounds = await block.boundingBox();
+  expect(bounds).not.toBeNull();
+  const centerX = bounds!.x + bounds!.width / 2;
+  const centerY = bounds!.y + bounds!.height / 2;
+
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX + 48, centerY + 32, { steps: 6 });
+  await page.mouse.up();
+
+  await expect.poll(async () => page.evaluate(blockId => {
+    const model = window.__jabrHost?.doc.getBlockById(blockId) as unknown as { xywh: string } | null;
+    return model ? (JSON.parse(model.xywh) as number[])[0] : null;
+  }, id!)).toBeGreaterThan(before![0] + 15);
+
+  await expect(page.getByRole('button', { name: 'Square 1' })).toHaveAttribute('aria-current', 'true');
+});
+
+test('properties inspector updates outer dimensions and rotation', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Square 1' }).click();
+
+  const width = page.locator('jabr-properties-panel label').filter({ hasText: 'Width' }).locator('input');
+  await width.fill('190');
+  await width.press('Tab');
+  await expect.poll(async () => page.evaluate(() => {
+    const model = window.__jabrHost?.root.selection.selectedElements[0] as unknown as { xywh: string } | undefined;
+    return model ? (JSON.parse(model.xywh) as number[])[2] : null;
+  })).toBe(190);
+
+  const rotation = page.locator('jabr-properties-panel label').filter({ hasText: 'Rotation' }).locator('input');
+  await rotation.fill('27');
+  await rotation.press('Tab');
+  await expect.poll(async () => page.evaluate(() =>
+    (window.__jabrHost?.root.selection.selectedElements[0] as unknown as { rotate: number } | undefined)?.rotate ?? null
+  )).toBe(27);
+});
