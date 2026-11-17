@@ -387,18 +387,30 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await page.evaluate(() => {
     const host = document.querySelector('affine-editor-container');
     if (!host) throw new Error('Edgeless host not found');
-    (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace = {
-      hostMoves: 0, documentMoves: 0, lastTarget: '',
+    (window as Window & { __jabrRotateTrace?: { hostCapture: number; hostBubble: number; documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean } }).__jabrRotateTrace = {
+      hostCapture: 0, hostBubble: 0, documentCapture: 0, documentBubble: 0, lastTarget: '', cancelBubble: false,
+    };
+    const trace = (window as Window & { __jabrRotateTrace?: { hostCapture: number; hostBubble: number; documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean } }).__jabrRotateTrace!;
+    const record = (event: PointerEvent) => {
+      trace.lastTarget = (event.target as Element)?.tagName ?? '';
+      trace.cancelBubble = event.cancelBubble;
     };
     host.addEventListener('pointermove', event => {
-      const trace = (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace!;
-      trace.hostMoves += 1;
-      trace.lastTarget = (event.target as Element)?.tagName ?? '';
+      trace.hostCapture += 1;
+      record(event);
     }, true);
-    document.addEventListener('pointermove', () => {
-      const trace = (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace!;
-      trace.documentMoves += 1;
+    host.addEventListener('pointermove', event => {
+      trace.hostBubble += 1;
+      record(event);
+    }, false);
+    document.addEventListener('pointermove', event => {
+      trace.documentCapture += 1;
+      record(event);
     }, true);
+    document.addEventListener('pointermove', event => {
+      trace.documentBubble += 1;
+      record(event);
+    }, false);
   });
   await page.mouse.move(startX, startY);
   await page.mouse.down();
