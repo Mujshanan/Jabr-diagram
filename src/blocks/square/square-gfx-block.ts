@@ -76,6 +76,16 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   @state()
   private _draft: SquarePoint = { x: 50, y: 50 };
 
+  @state()
+  private _rotationPreview: number | null = null;
+
+  private _rotationGesture: {
+    pointerId: number;
+    center: SquarePoint;
+    startAngle: number;
+    initialRotation: number;
+  } | null = null;
+
   private _activePointerId: number | null = null;
 
   private readonly _onDocumentPointerDown = (event: PointerEvent) => {
@@ -105,12 +115,105 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   override connectedCallback() {
     super.connectedCallback();
     this.addEventListener('keydown', this._onKeyDown);
+    // BlockSuite 0.19.5 enters its selected-rect rotate mode for custom
+    // GfxCompatible blocks but does not persist the resulting block rotation.
+    // Bridge that gesture here while keeping the figure renderer independent
+    // of the editor's selection implementation.
+    document.addEventListener('pointerdown', this._onRotationPointerDown, true);
+    document.addEventListener('pointermove', this._onRotationPointerMove, true);
+    document.addEventListener('pointerup', this._onRotationPointerUp, true);
+    document.addEventListener('pointercancel', this._onRotationPointerCancel, true);
   }
 
   override disconnectedCallback() {
     this._exitEditMode();
+    this._clearRotationGesture();
     this.removeEventListener('keydown', this._onKeyDown);
+    document.removeEventListener('pointerdown', this._onRotationPointerDown, true);
+    document.removeEventListener('pointermove', this._onRotationPointerMove, true);
+    document.removeEventListener('pointerup', this._onRotationPointerUp, true);
+    document.removeEventListener('pointercancel', this._onRotationPointerCancel, true);
     super.disconnectedCallback();
+  }
+
+  private _onRotationPointerDown = (event: PointerEvent) => {
+    if (this._editing || event.button !== 0 || this._rotationGesture) return;
+
+    const target = event.target;
+    if (
+      !(target instanceof Element) ||
+      !target.closest('edgeless-selected-rect .affine-edgeless-selected-rect .handle .rotate')
+    ) {
+      return;
+    }
+
+    const selections = this.std.selection.value;
+    if (selections.length !== 1 || selections[0]?.blockId !== this.model.id) {
+      return;
+    }
+
+    const [x, y, width, height] = JSON.parse(this.model.xywh) as number[];
+    const center = { x: x + width / 2, y: y + height / 2 };
+    const [pointX, pointY] = this.gfx.viewport.toModelCoordFromClientCoord([
+      event.clientX,
+      event.clientY,
+    ]);
+
+    this._rotationGesture = {
+      pointerId: event.pointerId,
+      center,
+      startAngle: Math.atan2(pointY - center.y, pointX - center.x),
+      initialRotation: this.model.rotate,
+    };
+    this._rotationPreview = this.model.rotate;
+  };
+
+  private _rotationFromPointerEvent(event: PointerEvent) {
+    const gesture = this._rotationGesture;
+    if (!gesture) return null;
+
+    const [pointX, pointY] = this.gfx.viewport.toModelCoordFromClientCoord([
+      event.clientX,
+      event.clientY,
+    ]);
+    const angle = Math.atan2(
+      pointY - gesture.center.y,
+      pointX - gesture.center.x
+    );
+    let delta = angle - gesture.startAngle;
+    if (delta > Math.PI) delta -= Math.PI * 2;
+    if (delta < -Math.PI) delta += Math.PI * 2;
+
+    return gesture.initialRotation + (delta * 180) / Math.PI;
+  }
+
+  private _onRotationPointerMove = (event: PointerEvent) => {
+    if (this._rotationGesture?.pointerId !== event.pointerId) return;
+    const rotation = this._rotationFromPointerEvent(event);
+    if (rotation !== null) this._rotationPreview = rotation;
+  };
+
+  private _onRotationPointerUp = (event: PointerEvent) => {
+    if (this._rotationGesture?.pointerId !== event.pointerId) return;
+    const rotation = this._rotationFromPointerEvent(event);
+    const currentRotation = this.model.rotate;
+    this._clearRotationGesture();
+
+    // Commit once at pointerup. BlockSuite's own pointerup listener runs after
+    // this capture listener and can close its history stash for the same drag.
+    if (rotation !== null && Math.abs(rotation - currentRotation) > 0.001) {
+      this.doc.updateBlock(this.model, { rotate: rotation });
+    }
+  };
+
+  private _onRotationPointerCancel = (event: PointerEvent) => {
+    if (this._rotationGesture?.pointerId !== event.pointerId) return;
+    this._clearRotationGesture();
+  };
+
+  private _clearRotationGesture() {
+    this._rotationGesture = null;
+    this._rotationPreview = null;
   }
 
   private _enterEditMode() {
@@ -270,6 +373,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
 
   override renderGfxBlock() {
     const { fill, stroke, strokeWidth, rotate } = this.model;
+    const visualRotation = this._rotationPreview ?? rotate;
     const point = this._editing
       ? this._draft
       : { x: this.model.handlePoint[0], y: this.model.handlePoint[1] };
@@ -291,7 +395,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
         @pointercancel=${this._onPointerCancel}
         @lostpointercapture=${this._onLostPointerCapture}
       >
-        <g transform="rotate(${rotate} 50 50)">
+        <g transform="rotate(${visualRotation} 50 50)">
           <rect
             class="square"
             x="1"
