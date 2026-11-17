@@ -117,12 +117,13 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   const startX = bounds!.x + bounds!.width / 2;
   const startY = bounds!.y + bounds!.height / 2;
   console.log('JABR_ZOOM_DRAG_DIAGNOSTICS', await svg.evaluate(node => {
-    const matrix = node.getScreenCTM();
+    const svgElement = node as SVGSVGElement;
+    const matrix = svgElement.getScreenCTM();
     return {
       zoom: window.__jabrHost!.root.zoom,
-      rect: node.getBoundingClientRect().toJSON(),
+      rect: svgElement.getBoundingClientRect().toJSON(),
       matrix: matrix ? [matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f] : null,
-      pointerTarget: document.elementFromPoint(node.getBoundingClientRect().x + node.getBoundingClientRect().width / 2, node.getBoundingClientRect().y + node.getBoundingClientRect().height / 2)?.outerHTML?.slice(0, 160) ?? null,
+      pointerTarget: document.elementFromPoint(svgElement.getBoundingClientRect().x + svgElement.getBoundingClientRect().width / 2, svgElement.getBoundingClientRect().y + svgElement.getBoundingClientRect().height / 2)?.outerHTML?.slice(0, 160) ?? null,
     };
   }));
   const targetX = startX + 24;
