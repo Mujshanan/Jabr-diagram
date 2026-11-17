@@ -95,7 +95,7 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   // Exercise the real Edgeless viewport zoom rather than a CSS-only scale.
   await page.evaluate(() => {
     const viewport = window.__jabrHost!.root.viewport;
-    viewport.setViewport(1.25, viewport.center, false);
+    viewport.setViewport(1.25, [viewport.center.x, viewport.center.y], false);
   });
   await expect.poll(async () => page.evaluate(() => window.__jabrHost!.root.zoom)).toBe(1.25);
 
