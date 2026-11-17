@@ -340,6 +340,21 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
 
   const rotateHandle = page.locator('edgeless-selected-rect .affine-edgeless-selected-rect .handle[aria-label="top-right"] .rotate');
   await expect(rotateHandle).toBeVisible();
+  const beforeRotation = await page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number };
+    return model.rotate;
+  }, id!);
+  const rotateBounds = await rotateHandle.boundingBox();
+  expect(rotateBounds).not.toBeNull();
+  const rotateX = rotateBounds!.x + rotateBounds!.width / 2;
+  const rotateY = rotateBounds!.y + rotateBounds!.height / 2;
+  await page.mouse.move(rotateX, rotateY);
+  await page.mouse.down();
+  await page.mouse.move(rotateX + 42, rotateY + 34, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+  id!)).toSatisfy(value => Math.abs(value - beforeRotation) > 1);
 
   const rotationBefore = await page.evaluate(blockId =>
     (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
@@ -506,4 +521,82 @@ test('Layers selection supports BlockSuite z-order changes', async ({ page }) =>
   await expect.poll(async () => page.evaluate(blockId =>
     (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { index: string }).index,
   id!)).not.toBe(before);
+});
+
+
+test('internal point drag remains accurate at a non-default canvas zoom', async ({ page }) => {
+  await page.goto('/');
+  const firstBlock = page.locator('jabr-square-gfx').first();
+  await page.getByRole('button', { name: 'Square 1' }).click();
+  const svg = firstBlock.locator('svg');
+  await svg.dblclick();
+  await expect(svg).toHaveClass(/editing/);
+
+  const viewport = page.locator('affine-edgeless-viewport').first();
+  await viewport.hover();
+  const widthBeforeZoom = (await svg.boundingBox())!.width;
+  await page.mouse.wheel(0, -420);
+  await expect.poll(async () => (await svg.boundingBox())!.width).not.toBe(widthBeforeZoom);
+
+  const id = await page.evaluate(() =>
+    window.__jabrHost?.root.blocks.find(item => item.flavour === 'jabr:square')?.id ?? null
+  );
+  expect(id).not.toBeNull();
+  const before = await page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
+    return [...model.handlePoint];
+  }, id!);
+  const handle = firstBlock.locator('circle.jabr-square-handle');
+  const bounds = await handle.boundingBox();
+  expect(bounds).not.toBeNull();
+  const sx = bounds!.x + bounds!.width / 2;
+  const sy = bounds!.y + bounds!.height / 2;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.mouse.move(sx + 18, sy + 13, { steps: 4 });
+  await page.mouse.up();
+
+  await expect.poll(async () => page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
+    return model.handlePoint[0];
+  }, id!)).not.toBe(before[0]);
+});
+
+test('pointer cancellation discards the internal point draft without a document update', async ({ page }) => {
+  await page.goto('/');
+  const firstBlock = page.locator('jabr-square-gfx').first();
+  await page.getByRole('button', { name: 'Square 1' }).click();
+  const svg = firstBlock.locator('svg');
+  await svg.dblclick();
+  await expect(svg).toHaveClass(/editing/);
+
+  const id = await page.evaluate(() =>
+    window.__jabrHost?.root.blocks.find(item => item.flavour === 'jabr:square')?.id ?? null
+  );
+  expect(id).not.toBeNull();
+  const before = await page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
+    return [...model.handlePoint];
+  }, id!);
+
+  const handle = firstBlock.locator('circle.jabr-square-handle');
+  const bounds = await handle.boundingBox();
+  expect(bounds).not.toBeNull();
+  const sx = bounds!.x + bounds!.width / 2;
+  const sy = bounds!.y + bounds!.height / 2;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.mouse.move(sx + 35, sy + 25, { steps: 4 });
+  await page.evaluate(() => {
+    const svg = document.querySelector('jabr-square-gfx svg');
+    svg?.dispatchEvent(new PointerEvent('pointercancel', {
+      bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse',
+    }));
+  });
+  await page.mouse.up();
+
+  await expect.poll(async () => page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
+    return model.handlePoint;
+  }, id!)).toEqual(before);
 });
