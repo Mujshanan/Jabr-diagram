@@ -15,7 +15,7 @@ The component extends BlockSuite's `GfxBlockComponent`. BlockSuite owns outer se
 - Single click remains available to BlockSuite for normal Gfx selection.
 - Double-click enters Jabr's internal edit mode.
 - In edit mode, dragging the internal point uses local Lit `@state()` draft coordinates.
-- Pointer events for the internal handle stop propagation so the canvas does not interpret the drag as a canvas gesture.
+- Pointer events for the internal handle stop propagation so the canvas does not interpret the drag as a canvas gesture. Touch gesture suppression (`touch-action: none`) is scoped to edit mode so normal canvas navigation remains available.
 - The SVG captures the active pointer, and releases it on pointerup.
 - Escape or a pointerdown outside the block exits edit mode.
 - A completed drag performs exactly one `doc.updateBlock()` call. Pointermove never writes to Yjs, so one drag is one persistent history operation.
@@ -34,7 +34,7 @@ All styles are declared in the Lit component's static styles. The drawing uses J
 - `--jabr-draw-square-handle`
 - `--jabr-draw-selection`
 
-The host application can map these tokens to its light/dark theme palette. No external utility CSS is required inside the component's shadow root.
+The defaults map to BlockSuite 0.19.5 theme variables (`--affine-background-primary-color`, `--affine-primary-color` and `--affine-text-primary-color`) with fallbacks. No external utility CSS is required inside the component's shadow root.
 
 ## Version compatibility
 
