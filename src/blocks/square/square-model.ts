@@ -6,7 +6,6 @@ import type {
 import { GfxCompatible } from '@blocksuite/block-std/gfx';
 import {
   BlockModel,
-  BlockSchemaExtension,
   defineBlockSchema,
 } from '@blocksuite/store';
 
@@ -41,8 +40,6 @@ export const SquareBlockSchema = defineBlockSchema({
   toModel: () => new SquareBlockModel(),
 });
 
-export const SquareBlockSchemaExtension =
-  BlockSchemaExtension(SquareBlockSchema);
 
 export class SquareBlockModel
   extends GfxCompatible<SquareBlockProps>(BlockModel)
