@@ -28,10 +28,12 @@ Install this package in the same dependency graph as the host editor. Do not ins
 
 Register both parts of the block:
 
-1. Add `SquareBlockSchemaExtension` to the editor's schema/model extensions.
+1. Add `SquareBlockSchema` to the document schema with `new Schema().register([...])` (the BlockSuite 0.19.5 registration API).
 2. Add `SquareBlockSpec` to the editor's block view extensions.
 
 Exports are available from `src/index.ts`. The exact editor bootstrap is intentionally left to the host application because Jabr Draw does not own the AFFiNE/BlockSuite editor instance.
+
+Register `SquareBlockSchema` with the document's `Schema` before creating the `DocCollection`. Register `SquareBlockSpec` in the `BlockStdScope` extensions. BlockSuite 0.19.5 does not use the newer `BlockSchemaExtension` API.
 
 The block's schema declares `affine:surface` as its parent. It is therefore intended for an Edgeless surface, not as a normal page-flow content block.
 
