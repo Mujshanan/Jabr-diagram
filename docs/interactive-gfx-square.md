@@ -54,6 +54,12 @@ BlockSuite peer and development dependencies are pinned to exact version `0.19.5
 
 This prototype is Edgeless-only: its schema parent is `affine:surface`, and `GfxBlockComponent` renders the Edgeless Gfx view. Page mode requires a separate normal BlockSuite content-block adapter using the same Jabr figure model and SVG renderer. Do not pretend this Gfx block automatically works in PageEditor.
 
+## Standalone Edgeless host
+
+The repository includes a standalone test host under `demo/`, built with `AffineEditorContainer` from BlockSuite 0.19.5. It appends `SquareBlockSpec` to the preset's existing `edgelessSpecs`, registers `SquareBlockSchema` alongside `AffineSchemas`, creates an `affine:page` plus `affine:surface`, and inserts multiple sample squares. The host mounts the Properties and Layers panels and connects them to `EdgelessRootService`, its Gfx selection manager, and the document update stream.
+
+The host also exposes Add Square, Fit View, Undo and Redo controls. It saves a BlockSuite JSON snapshot to browser local storage and restores that snapshot on reload, allowing the prototype's scalar block properties and surface hierarchy to be checked across a reload. This is test-host persistence only, not a production persistence provider or collaboration backend.
+
 ## Automated validation
 
 GitHub Actions runs the TypeScript typecheck and unit tests for coordinate conversion, including rotation and clamping. These tests validate the geometry helper, not the complete BlockSuite host lifecycle.
