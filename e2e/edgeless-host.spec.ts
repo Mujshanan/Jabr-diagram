@@ -423,7 +423,17 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   const pointerTrace = await page.evaluate(() =>
     (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace
   );
-  console.log('JABR_SHADOW_POINTER_TRACE', { squareRoot, selectedRectRoot, pointerTrace });
+  const selectionInfo = await page.locator('jabr-square-gfx').first().evaluate((element, blockId) => {
+    const gfx = (element as unknown as { gfx: { selection: { selectedElements: Array<{ id: string }> } } }).gfx;
+    return {
+      modelId: blockId,
+      gfxSelectionIds: gfx.selection.selectedElements.map(item => item.id),
+      rootSelectionIds: window.__jabrHost!.root.selection.selectedElements.map(item => item.id),
+      eventRootType: (element as unknown as { _rotationEventRoot?: { constructor: { name: string } } })._rotationEventRoot?.constructor.name ?? null,
+      eventRootIsDocument: (element as unknown as { _rotationEventRoot?: unknown })._rotationEventRoot === document,
+    };
+  }, id!);
+  console.log('JABR_SHADOW_POINTER_TRACE', JSON.stringify({ squareRoot, selectedRectRoot, pointerTrace, selectionInfo }));
   await expect(
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
