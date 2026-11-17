@@ -356,18 +356,41 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number };
     return model.rotate;
   }, id!);
+
+  const blockBounds = await block.boundingBox();
   const rotateBounds = await rotateHandle.boundingBox();
+  expect(blockBounds).not.toBeNull();
   expect(rotateBounds).not.toBeNull();
-  const rotateX = rotateBounds!.x + rotateBounds!.width / 2;
-  const rotateY = rotateBounds!.y + rotateBounds!.height / 2;
-  await page.mouse.move(rotateX, rotateY);
+  const centerX = blockBounds!.x + blockBounds!.width / 2;
+  const centerY = blockBounds!.y + blockBounds!.height / 2;
+
+  // The rotate icon and resize hit-area overlap near the icon's center.
+  // Start at its exposed top-right corner so BlockSuite receives the rotate gesture.
+  const startX = rotateBounds!.x + rotateBounds!.width * 0.75;
+  const startY = rotateBounds!.y + rotateBounds!.height * 0.25;
+  const radius = Math.hypot(startX - centerX, startY - centerY);
+  const startAngle = Math.atan2(startY - centerY, startX - centerX);
+  const endAngle = startAngle + Math.PI / 6;
+  const endX = centerX + Math.cos(endAngle) * radius;
+  const endY = centerY + Math.sin(endAngle) * radius;
+
+  await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(rotateX + 42, rotateY + 34, { steps: 6 });
+  await expect(
+    page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
+  ).toHaveAttribute('data-mode', 'rotate');
+
+  for (let step = 1; step <= 8; step += 1) {
+    await page.mouse.move(
+      startX + (endX - startX) * step / 8,
+      startY + (endY - startY) * step / 8
+    );
+  }
   await page.mouse.up();
+
   await expect.poll(async () => page.evaluate(({ blockId, rotation }) =>
     Math.abs((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate - rotation),
   { blockId: id!, rotation: beforeRotation })).toBeGreaterThan(5);
-
 
 });
 
