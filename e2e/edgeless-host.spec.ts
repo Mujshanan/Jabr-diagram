@@ -40,3 +40,51 @@ test('adds another Gfx square from the host toolbar', async ({ page }) => {
   await expect(page.locator('jabr-square-gfx')).toHaveCount(4);
   await expect(page.getByRole('button', { name: 'Square 4' })).toBeVisible();
 });
+
+test('internal point drag commits one document update and Escape exits edit mode', async ({ page }) => {
+  await page.goto('/');
+  const firstBlock = page.locator('jabr-square-gfx').first();
+  await firstBlock.locator('svg').dblclick();
+  const handle = firstBlock.locator('circle.handle');
+  await expect(handle).toBeVisible();
+
+  const blockId = await page.evaluate(() => {
+    const model = window.__jabrHost?.root.blocks.find(item => item.flavour === 'jabr:square');
+    return model?.id ?? null;
+  });
+  expect(blockId).not.toBeNull();
+
+  await page.evaluate(id => {
+    const host = window.__jabrHost!;
+    (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount = 0;
+    host.doc.slots.blockUpdated.subscribe(payload => {
+      if (payload.id === id && payload.type === 'update') {
+        (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount! += 1;
+      }
+    });
+  }, blockId!);
+
+  const before = await page.evaluate(id => {
+    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { handleX: number; handleY: number } | null;
+    return model ? { x: model.handleX, y: model.handleY } : null;
+  }, blockId!);
+  const bounds = await handle.boundingBox();
+  expect(bounds).not.toBeNull();
+  const startX = bounds!.x + bounds!.width / 2;
+  const startY = bounds!.y + bounds!.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 24, startY + 18, { steps: 4 });
+  await page.mouse.up();
+
+  await expect.poll(async () => page.evaluate(id => {
+    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { handleX: number; handleY: number } | null;
+    return model ? model.handleX : null;
+  }, blockId!)).toBeGreaterThan(before!.x + 5);
+  await expect.poll(async () => page.evaluate(() =>
+    (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount ?? 0
+  )).toBe(1);
+
+  await page.keyboard.press('Escape');
+  await expect(firstBlock.locator('circle.handle')).toHaveCount(0);
+});
