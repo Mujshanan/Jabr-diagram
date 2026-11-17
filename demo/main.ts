@@ -44,6 +44,7 @@ app.replaceChildren(shell);
 const editor = new AffineEditorContainer();
 editor.className = 'edgeless-editor-container';
 editor.mode = 'edgeless';
+editor.doc = doc;
 editor.edgelessSpecs = [...editor.edgelessSpecs, ...SquareBlockSpec];
 
 const editorMount = shell.querySelector<HTMLDivElement>('#editor-mount')!;
@@ -61,7 +62,6 @@ await doc.load(() => {
   doc.addBlock('jabr:square', { xywh: '[500,70,150,150]', fill: '#e9f7ef', stroke: '#25845a', rotate: -8 }, surfaceId);
 });
 doc.resetHistory();
-editor.doc = doc;
 await editor.updateComplete;
 
 const root = editor.std.get(EdgelessRootService);
