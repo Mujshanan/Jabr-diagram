@@ -1,4 +1,4 @@
-import { AffineSchemas, EdgelessRootService } from '@blocksuite/blocks';
+import { AffineSchemas, EdgelessRootService, SurfaceBlockSchema } from '@blocksuite/blocks';
 import { effects as blocksEffects } from '@blocksuite/blocks/effects';
 import { AffineEditorContainer } from '@blocksuite/presets';
 import { effects as presetEffects } from '@blocksuite/presets/effects';
@@ -22,7 +22,18 @@ blocksEffects();
 presetEffects();
 
 const STORAGE_KEY = 'jabr-draw-edgeless-phase1';
-const schema = new Schema().register([...AffineSchemas, SquareBlockSchema]);
+const extendedSurfaceSchema = {
+  ...SurfaceBlockSchema,
+  metadata: {
+    ...SurfaceBlockSchema.metadata,
+    children: [...SurfaceBlockSchema.metadata.children, 'jabr:square'],
+  },
+};
+const schema = new Schema().register([
+  ...AffineSchemas.filter(item => item.flavour !== 'affine:surface'),
+  extendedSurfaceSchema,
+  SquareBlockSchema,
+]);
 const collection = new DocCollection({ schema });
 collection.meta.initialize();
 const job = new Job({ collection });
