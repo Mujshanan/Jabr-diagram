@@ -6,7 +6,7 @@ Prove that Jabr Draw can provide one custom engineering-figure object to BlockSu
 
 ## Model and host boundary
 
-The `jabr:square` model extends BlockSuite's `GfxCompatible` model wrapper and implements the Gfx geometry contract. Its `xywh`, index, rotation and lock state describe the outer Gfx object. Square-specific persistent properties are fill, stroke, stroke width and an internal editable point.
+The `jabr:square` model extends BlockSuite's `GfxCompatible` model wrapper and implements the Gfx geometry contract. Its `xywh`, index, rotation and lock state describe the outer Gfx object. Square-specific persistent properties are fill, stroke, stroke width and an internal editable point stored atomically as `handlePoint: [x, y]`.
 
 The `jabr-square-gfx` custom element is registered with Lit and its view is mapped by `BlockViewExtension`. The component extends BlockSuite's `GfxBlockComponent`. BlockSuite owns outer selection, movement, resizing, rotation, z-order and document lifecycle. Jabr owns the SVG content and its internal editing behavior.
 
@@ -30,7 +30,7 @@ The SVG is content inside the Gfx wrapper; it must not write its display dimensi
 
 - In edit mode, dragging the internal point uses local Lit `@state()` draft coordinates.
 - Pointermove never writes to Yjs.
-- Pointerup commits the completed point drag with one `doc.updateBlock()` call, so undo operates on the completed gesture rather than individual pointer samples.
+- Pointerup commits the completed point drag with one `doc.updateBlock()` call updating the single `handlePoint` property. Keeping both coordinates in one property avoids duplicate per-property update notifications and makes the drag one atomic document change.
 - Pointer cancellation/lost capture discards the draft.
 - Appearance updates use the public `updateAppearance({ fill, stroke, strokeWidth })` component method, which writes through `doc.updateBlock()`. A host toolbar/property panel should call this method rather than mutating the model or SVG styles directly. This persists style changes and syncs them through Yjs.
 
@@ -67,11 +67,11 @@ GitHub Actions runs:
 - TypeScript typechecking across the core, host and Playwright tests.
 - Geometry unit tests for zero-degree, 90-degree and arbitrary rotations plus clamping.
 - A production Vite build.
-- Playwright Chromium integration tests covering Edgeless host mounting, schema/view registration, insertion under `affine:surface`, panel visibility, layer selection, property edits, undo/redo, local snapshot save/reload, adding squares, outer Gfx movement, resize handles, rotation handles, z-order changes, and internal point dragging with exactly one document update and Escape exit.
+- Playwright Chromium integration tests covering Edgeless host mounting, schema/view registration, insertion under `affine:surface`, panel visibility, layer selection, property edits, undo/redo, local snapshot save/reload, adding squares, outer Gfx movement, resize and actual rotation dragging, z-order changes, internal point dragging with exactly one document update and Escape exit, zoomed pointer mapping, and pointer-cancellation rollback.
 
 ## Remaining manual checks
 
-The automated suite does not yet verify every browser interaction. Manually check pointer cancellation and outside-click exit, copy/paste, zoom/stroke scaling at multiple viewport zoom levels, and light/dark theme behavior. Collaboration and cross-client concurrent editing belong to the later Yjs adapter milestone, not this Phase 1 host spike.
+The automated suite covers pointer cancellation, zoomed pointer mapping, actual outer rotation dragging, and Escape exit. Remaining manual checks include outside-click exit, copy/paste, stroke scaling at multiple viewport zoom levels, and light/dark theme behavior. Collaboration and cross-client concurrent editing belong to the later Yjs adapter milestone, not this Phase 1 host spike.
 
 ## Deliberate non-goals
 
