@@ -425,8 +425,9 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     };
     const trace = (window as Window & { __jabrRotateTrace?: {
       editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
+      managerHostCapture: number; managerHostBubble: number;
       documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean;
-      stdHostTag: string; stdHostIsEditor: boolean;
+      stdHostTag: string; stdHostIsEditor: boolean; managerHostTag: string; managerHostIsStdHost: boolean;
     } }).__jabrRotateTrace!;
     const record = (event: PointerEvent) => {
       trace.lastTarget = (event.target as Element)?.tagName ?? '';
