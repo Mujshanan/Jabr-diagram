@@ -82,6 +82,8 @@ shell.innerHTML = `
       <span class="mode-label">EDGELESS TEST ENVIRONMENT</span>
       <button id="undo" type="button" class="quiet">Undo</button>
       <button id="redo" type="button" class="quiet">Redo</button>
+      <button id="bring-forward" type="button" class="quiet">Bring forward</button>
+      <button id="send-backward" type="button" class="quiet">Send backward</button>
       <button id="add-square" type="button">＋ Add square</button>
       <button id="fit-view" type="button" class="quiet">Fit view</button>
     </div>
@@ -109,6 +111,8 @@ const layers = shell.querySelector<JabrLayersPanel>('jabr-layers-panel')!;
 const status = shell.querySelector<HTMLSpanElement>('#status')!;
 const undoButton = shell.querySelector<HTMLButtonElement>('#undo')!;
 const redoButton = shell.querySelector<HTMLButtonElement>('#redo')!;
+const bringForwardButton = shell.querySelector<HTMLButtonElement>('#bring-forward')!;
+const sendBackwardButton = shell.querySelector<HTMLButtonElement>('#send-backward')!;
 
 await editor.updateComplete;
 const root = editor.std.get(EdgelessRootService);
@@ -116,6 +120,9 @@ const root = editor.std.get(EdgelessRootService);
 const updateHistoryControls = () => {
   undoButton.disabled = !doc.canUndo;
   redoButton.disabled = !doc.canRedo;
+  const hasSelection = root.selection.selectedElements.length > 0;
+  bringForwardButton.disabled = !hasSelection;
+  sendBackwardButton.disabled = !hasSelection;
 };
 
 const refreshPanels = () => {
@@ -190,6 +197,14 @@ updateHistoryControls();
 
 shell.querySelector<HTMLButtonElement>('#undo')!.addEventListener('click', () => doc.undo());
 shell.querySelector<HTMLButtonElement>('#redo')!.addEventListener('click', () => doc.redo());
+bringForwardButton.addEventListener('click', () => {
+  const selected = root.selection.selectedElements[0];
+  if (selected) root.reorderElement(selected, 'forward');
+});
+sendBackwardButton.addEventListener('click', () => {
+  const selected = root.selection.selectedElements[0];
+  if (selected) root.reorderElement(selected, 'backward');
+});
 
 shell.querySelector<HTMLButtonElement>('#add-square')!.addEventListener('click', () => {
   const count = root.blocks.filter(model => (model as unknown as { flavour?: string }).flavour === 'jabr:square').length;
