@@ -2,7 +2,7 @@ import { AffineSchemas, EdgelessRootService } from '@blocksuite/blocks';
 import { effects as blocksEffects } from '@blocksuite/blocks/effects';
 import { AffineEditorContainer } from '@blocksuite/presets';
 import { effects as presetEffects } from '@blocksuite/presets/effects';
-import { DocCollection, Job, Schema, Text } from '@blocksuite/store';
+import { DocCollection, Job, Schema, Text, type Doc } from '@blocksuite/store';
 
 import {
   SquareBlockSchema,
@@ -28,7 +28,7 @@ collection.meta.initialize();
 const job = new Job({ collection });
 
 const savedSnapshot = localStorage.getItem(STORAGE_KEY);
-let doc;
+let doc: Doc | undefined;
 if (savedSnapshot) {
   try {
     doc = await job.snapshotToDoc(JSON.parse(savedSnapshot));
@@ -64,6 +64,8 @@ if (!doc) {
     }, surfaceId);
   });
 }
+
+doc.resetHistory();
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app mount element');
