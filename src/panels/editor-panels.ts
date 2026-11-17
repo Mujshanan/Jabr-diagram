@@ -26,7 +26,8 @@ export class JabrPropertiesPanel extends LitElement {
   }
   private setGeometry(i:number,v:number) { const next=this.geometry(); next[i]=v; this.onUpdate?.({xywh:JSON.stringify(next)} as Partial<SquareBlockProps>); }
   private number(label:string,value:number,change:(v:number)=>void) {
-    return html`<label>${label}<input type="number" .value=${String(value)} @change=${(e:Event)=>{const v=Number((e.currentTarget as HTMLInputElement).value);if(Number.isFinite(v))change(v)}}></label>`;
+    const name = label.toLowerCase().replace(/\\s+/g, '-');
+    return html`<label>${label}<input name=${name} type="number" .value=${String(value)} @change=${(e:Event)=>{const v=Number((e.currentTarget as HTMLInputElement).value);if(Number.isFinite(v))change(v)}}></label>`;
   }
   private color(value:string,fallback:string) { return /^#[0-9a-f]{6}$/i.test(value)?value:fallback; }
   override render() {
