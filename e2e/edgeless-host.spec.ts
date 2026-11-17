@@ -88,7 +88,23 @@ test('internal point drag commits one document update and Escape exits edit mode
   });
   await expect(firstBlock.locator('svg')).toHaveClass(/editing/);
   const handle = firstBlock.locator('circle.jabr-square-handle');
-  await expect(handle).toBeVisible();
+  await expect(handle).toHaveCount(1);
+  const handleDiagnostics = await firstBlock.evaluate(node => {
+    const circle = node.querySelector('circle.jabr-square-handle') as SVGCircleElement | null;
+    const style = circle ? getComputedStyle(circle) : null;
+    const rect = circle?.getBoundingClientRect();
+    return {
+      tagName: circle?.tagName ?? null,
+      namespaceURI: circle?.namespaceURI ?? null,
+      rect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      display: style?.display ?? null,
+      visibility: style?.visibility ?? null,
+      opacity: style?.opacity ?? null,
+      fill: style?.fill ?? null,
+      pointerEvents: style?.pointerEvents ?? null,
+    };
+  });
+  console.log('JABR_HANDLE_STYLE', JSON.stringify(handleDiagnostics));
 
   const blockId = await page.evaluate(() => {
     const model = window.__jabrHost?.root.blocks.find(item => (item as unknown as { flavour?: string }).flavour === 'jabr:square');
