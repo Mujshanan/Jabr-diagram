@@ -26,14 +26,21 @@ Install this package in the same dependency graph as the host editor. Do not ins
 
 ## Registering the block
 
-Register both parts of the block:
+Register both parts using the BlockSuite 0.19.5 APIs:
 
-1. Add `SquareBlockSchema` to the document schema with `new Schema().register([...])` (the BlockSuite 0.19.5 registration API).
-2. Add `SquareBlockSpec` to the editor's block view extensions.
+```ts
+const schema = new Schema().register([
+  // the host's existing schemas
+  SquareBlockSchema,
+]);
+const collection = new DocCollection({ id: 'jabr', schema });
+const std = new BlockStdScope({
+  doc,
+  extensions: [...SquareBlockSpec],
+});
+```
 
-Exports are available from `src/index.ts`. The exact editor bootstrap is intentionally left to the host application because Jabr Draw does not own the AFFiNE/BlockSuite editor instance.
-
-Register `SquareBlockSchema` with the document's `Schema` before creating the `DocCollection`. Register `SquareBlockSpec` in the `BlockStdScope` extensions. BlockSuite 0.19.5 does not use the newer `BlockSchemaExtension` API.
+Register the schema before creating the `DocCollection`; register the view extension in the `BlockStdScope`. BlockSuite 0.19.5 does not use the newer `BlockSchemaExtension` API. Exports are available from `src/index.ts`; the host application remains responsible for its editor bootstrap.
 
 The block's schema declares `affine:surface` as its parent. It is therefore intended for an Edgeless surface, not as a normal page-flow content block.
 
@@ -44,7 +51,9 @@ For this first spike, the square is one complete Gfx object:
 - Click/select, move, rotate and z-order are host operations.
 - The SVG is rendered inside the Gfx block.
 - The SVG preserves its square aspect ratio when the outer Gfx bounds are resized.
-- Engineering-specific internal selection, dimension editing, constraints and parameter binding are not implemented yet.
+- Double-click enters internal edit mode; drag the internal point to reposition it.
+- Escape or clicking outside exits internal edit mode.
+- The point drag is committed once on pointerup, not on every pointermove.
 
 Do not turn each SVG path or annotation into a separate BlockSuite surface element. Jabr Draw should own those internal objects in later milestones.
 
