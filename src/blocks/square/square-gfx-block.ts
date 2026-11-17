@@ -41,7 +41,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       transition: fill 100ms ease, stroke 100ms ease;
     }
 
-    jabr-square-gfx .handle {
+    jabr-square-gfx .jabr-square-handle {
       fill: var(--jabr-draw-square-handle);
       stroke: Canvas;
       stroke-width: 1.5;
@@ -49,7 +49,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       cursor: grab;
     }
 
-    jabr-square-gfx .handle:active {
+    jabr-square-gfx .jabr-square-handle:active {
       cursor: grabbing;
     }
 
@@ -312,7 +312,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
                   height="98"
                 ></rect>
                 <circle
-                  class="handle"
+                  class="jabr-square-handle"
                   data-jabr-handle
                   cx=${point.x}
                   cy=${point.y}
