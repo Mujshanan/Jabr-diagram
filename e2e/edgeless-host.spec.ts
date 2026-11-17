@@ -383,96 +383,12 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
 
-  await page.locator('edgeless-selected-rect').first().evaluate((element, { blockId, startX, startY, endX, endY }) => {
-    const widget = element as unknown as {
-      gfx: { std: { host: EventTarget }; view: { get: (model: unknown) => unknown }; viewport: { toModelCoordFromClientCoord: (point: [number, number]) => [number, number] } };
-    };
-    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as {
-      id: string; rotate: number; props: Record<string, unknown>; constructor: { name: string };
-    };
-    const view = widget.gfx.view.get(model);
-    const managerHost = widget.gfx.std.host;
-    const interaction = (widget as unknown as { _interaction: {
-      gfx: typeof widget.gfx;
-      activeInteraction$: { value: { type: string; elements: Array<{ id: string; rotate: number }> } | null };
-      _getViewRotateConfig: (elements: unknown[]) => { rotatable: boolean; viewConfigMap: Map<string, {
-        handlers: { onRotateMove?: unknown }; defaultHandlers: { onRotateMove?: unknown };
-        view: { model: { id: string } };
-      }> };
-    } })._interaction;
-    const managerGfx = interaction.gfx;
-    const rotateConfig = interaction._getViewRotateConfig([model]);
-    const activeInteraction = interaction.activeInteraction$.value;
-    const modelProps = model.props;
-    const viewport = widget.gfx.viewport;
-    const rootViewport = window.__jabrHost!.root.viewport;
-    const selectedModel = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
-    const [x, y, width, height] = JSON.parse(selectedModel.xywh) as number[];
-    const modelStart = viewport.toModelCoordFromClientCoord([startX, startY]);
-    const modelEnd = viewport.toModelCoordFromClientCoord([endX, endY]);
-    const modelCenter = [x + width / 2, y + height / 2];
-    const a0 = Math.atan2(modelStart[1] - modelCenter[1], modelStart[0] - modelCenter[0]);
-    const a1 = Math.atan2(modelEnd[1] - modelCenter[1], modelEnd[0] - modelCenter[0]);
-    (window as Window & { __jabrRotationDiag?: {
-      viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
-      moves: number; rotations: number[]; modelStart: number[]; modelEnd: number[];
-      modelCenter: number[]; modelDelta: number; sameViewportAsRoot: boolean; clientMoves: number[][];
-      modelType: string; hasRotate: boolean; ownsRotate: boolean; propsKeys: string[];
-      viewModelSame: boolean; managerGfxSame: boolean; managerViewExists: boolean;
-      rotateConfigSize: number; rotateConfigHasHandler: boolean; defaultRotateHandler: boolean;
-      activeType: string | null; activeElementIds: string[];
-    } }).__jabrRotationDiag = {
-      viewType: (view as { constructor: { name: string } } | null)?.constructor.name ?? null,
-      managerHostTag: (managerHost as Element).tagName ?? managerHost.constructor.name,
-      sameAsEditorHost: managerHost === (window.__jabrHost!.editor.std as unknown as { host: EventTarget }).host,
-      modelType: model.constructor.name,
-      hasRotate: 'rotate' in modelProps,
-      ownsRotate: Object.hasOwn(modelProps, 'rotate'),
-      propsKeys: Object.keys(modelProps),
-      viewModelSame: (view as { model?: unknown } | null)?.model === model,
-      managerGfxSame: managerGfx === widget.gfx,
-      managerViewExists: Boolean(managerGfx.view.get(model)),
-      rotateConfigSize: rotateConfig.viewConfigMap.size,
-      rotateConfigHasHandler: typeof [...rotateConfig.viewConfigMap.values()][0]?.handlers.onRotateMove === 'function',
-      defaultRotateHandler: typeof [...rotateConfig.viewConfigMap.values()][0]?.defaultHandlers.onRotateMove === 'function',
-      activeType: activeInteraction?.type ?? null,
-      activeElementIds: activeInteraction?.elements.map(element => element.id) ?? [],
-      moves: 0,
-      rotations: [],
-      modelStart,
-      modelEnd,
-      modelCenter,
-      modelDelta: (a1 - a0) * 180 / Math.PI,
-      sameViewportAsRoot: viewport === rootViewport,
-      clientMoves: [],
-    };
-    managerHost.addEventListener('pointermove', event => {
-      const diag = (window as Window & { __jabrRotationDiag?: {
-        viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
-        moves: number; rotations: number[]; clientMoves: number[][];
-      } }).__jabrRotationDiag!;
-      const pointer = event as PointerEvent;
-      diag.clientMoves.push([pointer.clientX, pointer.clientY]);
-      diag.moves += 1;
-      diag.rotations.push((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate);
-    }, false);
-  }, { blockId: id!, startX, startY, endX, endY });
-
   for (let step = 1; step <= 8; step += 1) {
     await page.mouse.move(
       startX + (endX - startX) * step / 8,
       startY + (endY - startY) * step / 8
     );
   }
-  const rotationDiag = await page.evaluate(() =>
-    (window as Window & { __jabrRotationDiag?: {
-      viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
-      moves: number; rotations: number[]; modelStart: number[]; modelEnd: number[];
-      modelCenter: number[]; modelDelta: number;
-    } }).__jabrRotationDiag
-  );
-  await page.mouse.up();
-  console.log('JABR_ROTATION_DIAG', rotationDiag);
 
   await expect.poll(async () => page.evaluate(({ blockId, rotation }) =>
     Math.abs((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate - rotation),
