@@ -82,7 +82,15 @@ test('internal point drag commits one document update and Escape exits edit mode
   await page.goto('/');
   const firstBlock = page.locator('jabr-square-gfx').first();
   await page.getByRole('button', { name: 'Square 1' }).click();
-  await firstBlock.locator('svg').dblclick({ force: true });
+  const svg = firstBlock.locator('svg');
+  await svg.evaluate(node => {
+    node.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+  });
+  const editState = await firstBlock.evaluate(node => ({
+    editing: (node as HTMLElement & { _editing?: boolean })._editing,
+    svgClass: node.querySelector('svg')?.getAttribute('class') ?? null,
+  }));
+  console.log('JABR_INTERNAL_EDIT_STATE', JSON.stringify(editState));
   const handle = firstBlock.locator('circle.handle');
   await expect(handle).toBeVisible();
 
@@ -219,6 +227,11 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   // definitely `.rotate`, not its sibling `.resize` target.
   const rotateX = rotateBounds!.x + rotateBounds!.width * 0.85;
   const rotateY = rotateBounds!.y + rotateBounds!.height * 0.15;
+  const rotateHit = await page.evaluate(({ x, y }) => {
+    const target = document.elementFromPoint(x, y) as HTMLElement | null;
+    return { className: target?.className ?? null, parentClass: target?.parentElement?.className ?? null };
+  }, { x: rotateX, y: rotateY });
+  console.log('JABR_ROTATE_HIT', JSON.stringify(rotateHit));
   await page.mouse.move(rotateX, rotateY);
   await page.mouse.down();
   await page.mouse.move(rotateX + 30, rotateY + 36, { steps: 6 });
