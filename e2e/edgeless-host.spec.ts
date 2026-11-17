@@ -93,8 +93,11 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   expect(blockId).not.toBeNull();
 
   // Exercise the real Edgeless viewport zoom rather than a CSS-only scale.
-  await page.evaluate(() => window.__jabrHost!.root.setZoomByStep(0.25));
-  await expect.poll(async () => page.evaluate(() => window.__jabrHost!.root.zoom)).toBeGreaterThan(1);
+  await page.evaluate(() => {
+    const viewport = window.__jabrHost!.root.viewport;
+    viewport.setViewport(1.25, viewport.center, false);
+  });
+  await expect.poll(async () => page.evaluate(() => window.__jabrHost!.root.zoom)).toBe(1.25);
 
   const before = await page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
@@ -113,6 +116,15 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   expect(bounds).not.toBeNull();
   const startX = bounds!.x + bounds!.width / 2;
   const startY = bounds!.y + bounds!.height / 2;
+  console.log('JABR_ZOOM_DRAG_DIAGNOSTICS', await svg.evaluate(node => {
+    const matrix = node.getScreenCTM();
+    return {
+      zoom: window.__jabrHost!.root.zoom,
+      rect: node.getBoundingClientRect().toJSON(),
+      matrix: matrix ? [matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f] : null,
+      pointerTarget: document.elementFromPoint(node.getBoundingClientRect().x + node.getBoundingClientRect().width / 2, node.getBoundingClientRect().y + node.getBoundingClientRect().height / 2)?.outerHTML?.slice(0, 160) ?? null,
+    };
+  }));
   const targetX = startX + 24;
   const targetY = startY + 18;
 
@@ -334,14 +346,20 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   // receives pointerdown rather than the resize handler.
   const rotationPoint = await rotateHandle.evaluate(node => {
     const rect = node.getBoundingClientRect();
-    const x = rect.x + rect.width * 0.75;
-    const y = rect.y + rect.height * 0.25;
-    return {
-      x,
-      y,
-      isRotateTarget: document.elementFromPoint(x, y) === node,
-    };
+    const fractions = [0.1, 0.25, 0.5, 0.75, 0.9];
+    const hits = fractions.flatMap(fx => fractions.map(fy => {
+      const x = rect.x + rect.width * fx;
+      const y = rect.y + rect.height * fy;
+      const target = document.elementFromPoint(x, y) as HTMLElement | null;
+      return {
+        x, y, isRotateTarget: target === node,
+        targetClass: target?.className?.toString() ?? null,
+      };
+    }));
+    const hit = hits.find(item => item.isRotateTarget);
+    return hit ? { ...hit, hits } : { ...hits[12], isRotateTarget: false, hits };
   });
+  console.log('JABR_ROTATE_HIT_DIAGNOSTICS', JSON.stringify(rotationPoint));
   expect(rotationPoint.isRotateTarget).toBe(true);
   const startX = rotationPoint.x;
   const startY = rotationPoint.y;
