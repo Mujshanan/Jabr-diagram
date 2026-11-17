@@ -25,7 +25,8 @@
     "@blocksuite/store": "0.19.5",
     "@blocksuite/global": "0.19.5",
     "lit": "3.2.1",
-    "@blocksuite/icons": "2.1.75"
+    "@blocksuite/icons": "2.1.75",
+    "@toeverything/theme": "1.1.1"
   },
   "devDependencies": {
     "@playwright/test": "1.51.0",
