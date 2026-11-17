@@ -387,17 +387,26 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await page.evaluate(() => {
     const editor = window.__jabrHost!.editor;
     const stdHost = (editor.std as unknown as { host: EventTarget }).host;
+    const selectedRectWidget = document.querySelector('edgeless-selected-rect') as unknown as {
+      gfx: { std: { host: EventTarget } };
+    } | null;
+    if (!selectedRectWidget) throw new Error('Selected-rect widget not found');
+    const managerHost = selectedRectWidget.gfx.std.host;
     const host = document.querySelector('affine-editor-container');
     if (!host) throw new Error('Edgeless host not found');
     (window as Window & { __jabrRotateTrace?: {
       editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
+      managerHostCapture: number; managerHostBubble: number;
       documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean;
-      stdHostTag: string; stdHostIsEditor: boolean;
+      stdHostTag: string; stdHostIsEditor: boolean; managerHostTag: string; managerHostIsStdHost: boolean;
     } }).__jabrRotateTrace = {
       editorHostCapture: 0, editorHostBubble: 0, stdHostCapture: 0, stdHostBubble: 0,
+      managerHostCapture: 0, managerHostBubble: 0,
       documentCapture: 0, documentBubble: 0, lastTarget: '', cancelBubble: false,
       stdHostTag: (stdHost as Element).tagName ?? stdHost.constructor.name,
       stdHostIsEditor: stdHost === editor,
+      managerHostTag: (managerHost as Element).tagName ?? managerHost.constructor.name,
+      managerHostIsStdHost: managerHost === stdHost,
     };
     const trace = (window as Window & { __jabrRotateTrace?: {
       editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
@@ -422,6 +431,14 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     }, true);
     stdHost.addEventListener('pointermove', event => {
       trace.stdHostBubble += 1;
+      record(event as PointerEvent);
+    }, false);
+    managerHost.addEventListener('pointermove', event => {
+      trace.managerHostCapture += 1;
+      record(event as PointerEvent);
+    }, true);
+    managerHost.addEventListener('pointermove', event => {
+      trace.managerHostBubble += 1;
       record(event as PointerEvent);
     }, false);
     document.addEventListener('pointermove', event => {
@@ -460,8 +477,9 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   }
   const trace = await page.evaluate(() => (window as Window & { __jabrRotateTrace?: {
     editorHostCapture: number; editorHostBubble: number; stdHostCapture: number; stdHostBubble: number;
+    managerHostCapture: number; managerHostBubble: number;
     documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean;
-    stdHostTag: string; stdHostIsEditor: boolean;
+    stdHostTag: string; stdHostIsEditor: boolean; managerHostTag: string; managerHostIsStdHost: boolean;
   } }).__jabrRotateTrace);
   console.log('JABR_ROTATE_POINTER_TRACE', { trace, rotationMath, rotationSamples });
   await page.mouse.up();
