@@ -81,7 +81,8 @@ test('adds another Gfx square from the host toolbar', async ({ page }) => {
 test('internal point drag commits one document update and Escape exits edit mode', async ({ page }) => {
   await page.goto('/');
   const firstBlock = page.locator('jabr-square-gfx').first();
-  await firstBlock.locator('svg').dblclick();
+  await page.getByRole('button', { name: 'Square 1' }).click();
+  await firstBlock.locator('svg').dblclick({ force: true });
   const handle = firstBlock.locator('circle.handle');
   await expect(handle).toBeVisible();
 
@@ -160,7 +161,7 @@ test('properties inspector updates outer dimensions and rotation', async ({ page
   await page.goto('/');
   await page.getByRole('button', { name: 'Square 1' }).click();
 
-  const width = page.locator('jabr-properties-panel label').filter({ hasText: 'Width' }).locator('input');
+  const width = page.locator('jabr-properties-panel input[name="width"]');
   await width.fill('190');
   await width.press('Tab');
   await expect.poll(async () => page.evaluate(() => {
@@ -168,7 +169,7 @@ test('properties inspector updates outer dimensions and rotation', async ({ page
     return model ? (JSON.parse(model.xywh) as number[])[2] : null;
   })).toBe(190);
 
-  const rotation = page.locator('jabr-properties-panel label').filter({ hasText: 'Rotation' }).locator('input');
+  const rotation = page.locator('jabr-properties-panel input[name="rotation"]');
   await rotation.fill('27');
   await rotation.press('Tab');
   await expect.poll(async () => page.evaluate(() =>
@@ -213,11 +214,14 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await expect(rotateHandle).toBeVisible();
   const rotateBounds = await rotateHandle.boundingBox();
   expect(rotateBounds).not.toBeNull();
-  const rotateX = rotateBounds!.x + rotateBounds!.width / 2;
-  const rotateY = rotateBounds!.y + rotateBounds!.height / 2;
+  // The resize and rotate hit regions overlap at their centers. Start in the
+  // non-overlapping outer corner of the rotate target so the event target is
+  // definitely `.rotate`, not its sibling `.resize` target.
+  const rotateX = rotateBounds!.x + rotateBounds!.width * 0.85;
+  const rotateY = rotateBounds!.y + rotateBounds!.height * 0.15;
   await page.mouse.move(rotateX, rotateY);
   await page.mouse.down();
-  await page.mouse.move(rotateX + 12, rotateY + 38, { steps: 5 });
+  await page.mouse.move(rotateX + 30, rotateY + 36, { steps: 6 });
   await page.mouse.up();
 
   await expect.poll(async () => page.evaluate(blockId =>
