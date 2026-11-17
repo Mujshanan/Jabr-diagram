@@ -5,15 +5,22 @@
   "type": "module",
   "description": "BlockSuite 0.19.5 Gfx block adapter prototype for Jabr Draw.",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "validate": "npm run typecheck && npm test"
   },
   "peerDependencies": {
     "@blocksuite/block-std": "0.19.5",
     "@blocksuite/store": "0.19.5",
     "@blocksuite/global": "0.19.5",
-    "lit": "^3.1.0"
+    "lit": "3.1.2"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "@blocksuite/block-std": "0.19.5",
+    "@blocksuite/store": "0.19.5",
+    "@blocksuite/global": "0.19.5",
+    "lit": "3.1.2",
+    "typescript": "5.5.4",
+    "vitest": "2.1.8"
   }
 }

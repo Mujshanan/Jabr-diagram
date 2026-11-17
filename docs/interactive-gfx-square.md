@@ -12,7 +12,7 @@ The `jabr-square-gfx` custom element is registered with Lit and its view is mapp
 
 ## Bounding box and SVG contract
 
-The outer Gfx model owns the canvas-space bounding box (`xywh`), rotation and scale. The inner SVG uses a fixed logical coordinate system (`viewBox="0 0 100 100"`) with explicit `width="100%"` and `height="100%"`. `preserveAspectRatio="xMidYMid meet"` keeps the square geometry from stretching if the host bounding box is temporarily non-square. Shapes use `vector-effect="non-scaling-stroke"` so outlines remain visually consistent during host resizing and zooming.
+The outer Gfx model owns the canvas-space bounding box (`xywh`) and rotation. The inner SVG uses a fixed logical coordinate system (`viewBox="0 0 100 100"`) with explicit `width="100%"` and `height="100%"`. `preserveAspectRatio="xMidYMid meet"` keeps the square geometry from stretching if the host bounding box is temporarily non-square. Shapes use `vector-effect="non-scaling-stroke"` so outlines remain visually consistent during host resizing and zooming.
 
 The SVG is content inside the Gfx wrapper; it must not write its display dimensions back into engineering parameters.
 
@@ -21,7 +21,9 @@ The SVG is content inside the Gfx wrapper; it must not write its display dimensi
 - In normal mode, inner pointer events bubble to BlockSuite. Users can select and move the complete Gfx block with the host's normal canvas interactions.
 - Double-click enters Jabr's internal edit mode.
 - In edit mode, the internal handle's pointer events stop propagation and use pointer capture. This prevents the canvas from interpreting the handle drag as a block drag, pan or box selection.
-- Clicking inside the SVG but outside the handle does not initiate a Jabr drag. Escape or pointerdown outside the block exits edit mode.
+- Clicking inside the SVG but outside the handle does not initiate a Jabr drag.
+- Escape exits internal edit mode. Delete and Backspace are prevented from reaching BlockSuite while the SVG editor surface is focused.
+- Clicking outside exits internal edit mode.
 - Touch gesture suppression (`touch-action: none`) is scoped to edit mode so normal canvas navigation remains available.
 
 ## Interaction lifecycle and Yjs
@@ -32,32 +34,31 @@ The SVG is content inside the Gfx wrapper; it must not write its display dimensi
 - Pointer cancellation/lost capture discards the draft.
 - Appearance updates use the public `updateAppearance({ fill, stroke, strokeWidth })` component method, which writes through `doc.updateBlock()`. A host toolbar/property panel should call this method rather than mutating the model or SVG styles directly. This persists style changes and syncs them through Yjs.
 
-## Coordinates and responsive sizing
+## Coordinates and rotation
 
-The SVG uses a responsive `viewBox`, `width: 100%` and `height: 100%`. Pointer positions are converted from client/screen coordinates through `getScreenCTM().inverse()` and `createSVGPoint()`, rather than `offsetX/offsetY`. This accounts for CSS scaling, host zoom and high-DPI displays.
+Pointer positions are converted from client/screen coordinates through `getScreenCTM().inverse()` and `createSVGPoint()`, rather than `offsetX/offsetY`. This accounts for CSS scaling, host zoom and high-DPI displays.
 
-## Styling
+The SVG content is rotated around its 50,50 center. The resulting SVG-local pointer coordinate is inverse-rotated before it is stored in the model's unrotated 0..100 coordinate space. This keeps the handle attached to the pointer when the Gfx object is rotated.
 
-All styles are declared in the Lit component's static styles. The drawing uses Jabr CSS custom properties with safe fallbacks:
+## Styling and light DOM
 
-- `--jabr-draw-square-fill`
-- `--jabr-draw-square-stroke`
-- `--jabr-draw-square-handle`
-- `--jabr-draw-selection`
+BlockSuite 0.19.5's `GfxBlockComponent` inherits `ShadowlessElement`, whose `createRenderRoot()` returns the element itself. Its Lit styles may be injected into `document.head`; they are not isolated in a component shadow root.
 
-The defaults map to BlockSuite 0.19.5 theme variables (`--affine-background-primary-color`, `--affine-primary-color` and `--affine-text-primary-color`) with fallbacks. No external utility CSS is required inside the component's shadow root.
+Therefore all component CSS selectors are explicitly prefixed with `jabr-square-gfx`. Do not use unscoped selectors such as `svg`, `.handle` or `.square`. The rendered SVG is queried from the component's light DOM using `this.querySelector('svg')`, not `this.shadowRoot`.
 
 ## Version compatibility
 
-BlockSuite peer dependencies are pinned to exact version `0.19.5`. Do not upgrade them independently of the host editor.
+BlockSuite peer and development dependencies are pinned to exact version `0.19.5`. Do not upgrade them independently of the host editor.
 
 ## Page mode
 
 This prototype is Edgeless-only: its schema parent is `affine:surface`, and `GfxBlockComponent` renders the Edgeless Gfx view. Page mode requires a separate normal BlockSuite content-block adapter using the same Jabr figure model and SVG renderer. Do not pretend this Gfx block automatically works in PageEditor.
 
-## Validation still required
+## Automated validation
 
-The source changes implement the interaction and persistence boundaries, but they have not yet been compiled or exercised in a live BlockSuite 0.19.5 host. Verify:
+GitHub Actions runs the TypeScript typecheck and unit tests for coordinate conversion, including rotation and clamping. These tests validate the geometry helper, not the complete BlockSuite host lifecycle.
+
+## Live editor validation still required
 
 1. Schema and view extension registration.
 2. Insertion under `affine:surface`.
@@ -75,4 +76,4 @@ The source changes implement the interaction and persistence boundaries, but the
 - No general-purpose CAD editor.
 - No D3 dependency.
 - No worksheet/Jabr CLI variable bridge yet.
-- No page-mode block yet.
+- No page-mode block.

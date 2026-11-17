@@ -8,8 +8,9 @@ The first host-integration spike is a **square Gfx block** for BlockSuite **0.19
 
 - `jabr:square` is a Gfx-compatible block model stored under `affine:surface`.
 - `jabr-square-gfx` is a `GfxBlockComponent` that renders the square as SVG.
-- BlockSuite owns the outer object's selection, movement, rotation, resizing, layer order and document persistence.
+- BlockSuite owns the outer object's selection, movement, rotation, resizing, layer order and document lifecycle.
 - Jabr supplies the SVG appearance, internal edit interaction and persistent style properties.
+- The pointer-to-model coordinate conversion accounts for the square's visual rotation.
 
 This is deliberately a host-integration spike, not yet the complete Jabr Draw engine or a standalone demo application.
 
@@ -20,7 +21,7 @@ The adapter expects the consuming application to use matching BlockSuite package
 - `@blocksuite/block-std@0.19.5`
 - `@blocksuite/store@0.19.5`
 - `@blocksuite/global@0.19.5`
-- `lit`
+- `lit@3.1.2`
 
 Install this package in the same dependency graph as the host editor. Do not install a second, different BlockSuite version alongside the host.
 
@@ -51,14 +52,51 @@ For this first spike, the square is one complete Gfx object:
 - In normal mode, pointer events bubble to BlockSuite so the user can select and move the complete square.
 - Double-click enters Jabr's internal edit mode; drag the internal point to reposition it.
 - Internal handle events stop propagation and use pointer capture.
-- Escape or clicking outside exits internal edit mode.
+- Escape exits internal edit mode; Delete and Backspace are suppressed while the SVG editor surface is focused.
+- Clicking outside exits internal edit mode.
 - The point drag is committed once on pointerup, not on every pointermove.
+- Pointer cancellation discards the local draft.
 - The SVG uses a responsive 100-by-100 viewBox, explicit 100% width/height and non-scaling strokes.
+- Pointer coordinates are inverse-rotated into the square's model coordinate system before persistence.
 
 Appearance changes are persisted using the component's `updateAppearance({ fill, stroke, strokeWidth })` method. A host property panel should call that method; it must not directly alter SVG presentation or mutate the model outside BlockSuite's document update API.
 
 Do not turn each SVG path or annotation into a separate BlockSuite surface element. Jabr Draw should own those internal objects in later milestones.
 
-## Validation status
+## Styling and BlockSuite's shadowless component base
 
-This source prototype still needs to be compiled against a real BlockSuite 0.19.5 host and exercised in an Edgeless editor. Verify schema registration, insertion, bounding-box resize behavior, pointer pass-through, edit-mode isolation, undo/redo for both geometry and style, collaboration, copy/paste and persistence before treating the adapter as integration-ready.
+In BlockSuite 0.19.5, `GfxBlockComponent` inherits `ShadowlessElement`. Its render root is the element itself, and Lit styles can be injected into the document head. These styles are **not** safely isolated in a shadow root.
+
+Consequently, every selector in the square component is prefixed with `jabr-square-gfx`. Avoid generic selectors such as `svg`, `.handle` or `.square` in this component's styles. Query rendered content from the component's light DOM (for example, `this.querySelector('svg')`), not from `this.shadowRoot`.
+
+## Validation
+
+Automated validation is configured in GitHub Actions:
+
+- TypeScript typecheck against exact BlockSuite 0.19.5 packages.
+- Unit tests for zero, 90-degree and arbitrary-angle coordinate conversion, plus coordinate clamping.
+
+The automated checks do not replace live-editor validation. Before treating this adapter as integration-ready, run it in a real BlockSuite 0.19.5 Edgeless host and verify:
+
+1. Schema and view extension registration.
+2. Insertion under `affine:surface`.
+3. Selection, move, resize, rotate and z-order.
+4. SVG scaling and stroke behavior at different Gfx bounding-box sizes.
+5. Normal pointer pass-through and edit-mode gesture isolation.
+6. Exactly one undo step for a completed point drag.
+7. Appearance changes through `updateAppearance()`, including undo/redo and collaboration.
+8. Pointer capture, Escape, outside click and pointercancel behavior.
+9. Correct pointer mapping at multiple zoom levels and rotation angles.
+10. Light/dark theme mapping, copy/paste and save/reload.
+
+## Scope
+
+This prototype is Edgeless-only. Page mode requires a separate normal content-block adapter using the same Jabr figure model and renderer.
+
+Deliberate non-goals:
+
+- No general-purpose CAD editor.
+- No D3 dependency.
+- No worksheet/Jabr CLI variable bridge yet.
+- No page-mode block.
+- No Yjs-native internal diagram graph yet; this prototype stores only a few scalar block properties.

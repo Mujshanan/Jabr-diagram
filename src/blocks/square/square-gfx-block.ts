@@ -4,15 +4,17 @@ import { GfxBlockComponent } from '@blocksuite/block-std';
 import { css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
-type Point = { x: number; y: number };
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
+import { toSquareModelPoint, type SquarePoint } from './square-geometry.js';
 
 @customElement('jabr-square-gfx')
 export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel> {
   static override styles = css`
-    :host {
+    /*
+     * BlockSuite 0.19.5 GfxBlockComponent inherits ShadowlessElement.
+     * Its styles may be injected into document.head, so every selector must
+     * be explicitly scoped to this custom-element tag.
+     */
+    jabr-square-gfx {
       display: block;
       overflow: visible;
       user-select: none;
@@ -22,7 +24,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       --jabr-draw-selection: var(--affine-primary-color, #2563eb);
     }
 
-    svg {
+    jabr-square-gfx svg {
       display: block;
       width: 100%;
       height: 100%;
@@ -30,16 +32,16 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       outline: none;
     }
 
-    svg.editing {
+    jabr-square-gfx svg.editing {
       touch-action: none;
     }
 
-    .square {
+    jabr-square-gfx .square {
       vector-effect: non-scaling-stroke;
       transition: fill 100ms ease, stroke 100ms ease;
     }
 
-    .handle {
+    jabr-square-gfx .handle {
       fill: var(--jabr-draw-square-handle);
       stroke: Canvas;
       stroke-width: 1.5;
@@ -47,11 +49,11 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       cursor: grab;
     }
 
-    .handle:active {
+    jabr-square-gfx .handle:active {
       cursor: grabbing;
     }
 
-    .edit-outline {
+    jabr-square-gfx .edit-outline {
       fill: none;
       stroke: var(--jabr-draw-selection);
       stroke-width: 1;
@@ -60,7 +62,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       pointer-events: none;
     }
 
-    .hint {
+    jabr-square-gfx .hint {
       fill: var(--affine-text-primary-color, currentColor);
       font: 4px sans-serif;
       opacity: 0.75;
@@ -72,7 +74,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   private accessor _editing = false;
 
   @state()
-  private accessor _draft: Point = { x: 50, y: 50 };
+  private accessor _draft: SquarePoint = { x: 50, y: 50 };
 
   private _activePointerId: number | null = null;
 
@@ -83,10 +85,20 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   };
 
   private readonly _onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && this._editing) {
+    if (!this._editing) return;
+
+    if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
       this._exitEditMode();
+      return;
+    }
+
+    // The SVG is the focused internal editor surface. Do not let destructive
+    // editor shortcuts delete the complete Gfx block while it is being edited.
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault();
+      event.stopPropagation();
     }
   };
 
@@ -116,13 +128,17 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     this._editing = false;
     const activePointerId = this._activePointerId;
     this._activePointerId = null;
-    const svg = this.shadowRoot?.querySelector('svg');
+
+    // GfxBlockComponent is shadowless in BlockSuite 0.19.5; the SVG is a
+    // light-DOM child, not a descendant of this.shadowRoot.
+    const svg = this.querySelector('svg');
     if (
       activePointerId !== null &&
       svg?.hasPointerCapture(activePointerId)
     ) {
       svg.releasePointerCapture(activePointerId);
     }
+
     document.removeEventListener(
       'pointerdown',
       this._onDocumentPointerDown,
@@ -167,7 +183,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     svg.setPointerCapture(event.pointerId);
   };
 
-  private _toSvgPoint(event: PointerEvent, svg: SVGSVGElement): Point | null {
+  private _toSvgPoint(event: PointerEvent, svg: SVGSVGElement): SquarePoint | null {
     const screenMatrix = svg.getScreenCTM();
     if (!screenMatrix) return null;
 
@@ -176,10 +192,10 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     point.y = event.clientY;
 
     const local = point.matrixTransform(screenMatrix.inverse());
-    return {
-      x: clamp(local.x, 1, 99),
-      y: clamp(local.y, 1, 99),
-    };
+    return toSquareModelPoint(
+      { x: local.x, y: local.y },
+      this.model.rotate
+    );
   }
 
   private _onPointerMove = (event: PointerEvent) => {
@@ -212,6 +228,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       svg instanceof SVGSVGElement ? this._toSvgPoint(event, svg) : null;
     const next = finalPoint ?? this._draft;
     this._draft = next;
+
     if (
       next.x !== this.model.handleX ||
       next.y !== this.model.handleY
@@ -227,8 +244,14 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   private _onPointerCancel = (event: PointerEvent) => {
     if (this._activePointerId !== event.pointerId) return;
 
+    event.preventDefault();
     event.stopPropagation();
+
+    const svg = event.currentTarget;
     this._activePointerId = null;
+    if (svg instanceof SVGSVGElement && svg.hasPointerCapture(event.pointerId)) {
+      svg.releasePointerCapture(event.pointerId);
+    }
     this._draft = {
       x: this.model.handleX,
       y: this.model.handleY,
@@ -252,7 +275,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
 
     return html`
       <svg
-        class=${this._editing ? "editing" : ""}
+        class=${this._editing ? 'editing' : ''}
         width="100%"
         height="100%"
         viewBox="0 0 100 100"
@@ -268,43 +291,43 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
         @lostpointercapture=${this._onLostPointerCapture}
       >
         <g transform="rotate(${rotate} 50 50)">
-        <rect
-          class="square"
-          x="1"
-          y="1"
-          width="98"
-          height="98"
-          rx="0"
-          fill=${fill}
-          stroke=${stroke}
-          stroke-width=${strokeWidth}
-        ></rect>
-        ${this._editing
-          ? html`
-              <rect
-                class="edit-outline"
-                x="1"
-                y="1"
-                width="98"
-                height="98"
-              ></rect>
-              <circle
-                class="handle"
-                data-jabr-handle
-                cx=${point.x}
-                cy=${point.y}
-                r="4"
-              ></circle>
-              <text class="hint" x="3" y="7">Drag point · Esc to finish</text>
-            `
-          : html`
-              <circle
-                cx=${point.x}
-                cy=${point.y}
-                r="2"
-                fill="var(--jabr-draw-square-handle)"
-              ></circle>
-            `}
+          <rect
+            class="square"
+            x="1"
+            y="1"
+            width="98"
+            height="98"
+            rx="0"
+            fill=${fill}
+            stroke=${stroke}
+            stroke-width=${strokeWidth}
+          ></rect>
+          ${this._editing
+            ? html`
+                <rect
+                  class="edit-outline"
+                  x="1"
+                  y="1"
+                  width="98"
+                  height="98"
+                ></rect>
+                <circle
+                  class="handle"
+                  data-jabr-handle
+                  cx=${point.x}
+                  cy=${point.y}
+                  r="4"
+                ></circle>
+                <text class="hint" x="3" y="7">Drag point · Esc to finish</text>
+              `
+            : html`
+                <circle
+                  cx=${point.x}
+                  cy=${point.y}
+                  r="2"
+                  fill="var(--jabr-draw-square-handle)"
+                ></circle>
+              `}
         </g>
       </svg>
     `;

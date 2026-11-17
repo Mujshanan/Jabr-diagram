@@ -1,0 +1,21 @@
+name: Validate square Gfx prototype
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/interactive-gfx-square
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-package-lock
+      - name: Typecheck and unit tests
+        run: npm run validate
