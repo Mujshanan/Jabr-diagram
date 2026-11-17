@@ -228,7 +228,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
 
     return html`
       <svg
-        class=${this._editing ? "editing" : ""}\n        viewBox="0 0 100 100"
+        class=${this._editing ? "editing" : ""}
+        viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="Jabr interactive square"
@@ -237,7 +238,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
         @pointerdown=${this._onPointerDown}
         @pointermove=${this._onPointerMove}
         @pointerup=${this._onPointerUp}
-        @pointercancel=${this._onPointerCancel}\n        @lostpointercapture=${this._onLostPointerCapture}
+        @pointercancel=${this._onPointerCancel}
+        @lostpointercapture=${this._onLostPointerCapture}
       >
         <rect
           class="square"
