@@ -416,9 +416,29 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await page.mouse.down();
   expect(await page.evaluate(() => (window as Window & { __jabrRotatePointerDown?: boolean }).__jabrRotatePointerDown ?? false)).toBe(true);
   await expect(page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')).toHaveAttribute('data-mode', 'rotate');
-  await page.mouse.move(endX, endY, { steps: 8 });
-  const trace = await page.evaluate(() => (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace);
-  console.log('JABR_ROTATE_POINTER_TRACE', trace);
+  const rotationMath = await page.evaluate(({ sx, sy, ex, ey, blockId }) => {
+    const viewport = window.__jabrHost!.root.viewport;
+    const start = viewport.toModelCoordFromClientCoord([sx, sy]);
+    const end = viewport.toModelCoordFromClientCoord([ex, ey]);
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
+    const [x, y, width, height] = JSON.parse(model.xywh) as number[];
+    const center = [x + width / 2, y + height / 2];
+    const startAngle = Math.atan2(start[1] - center[1], start[0] - center[0]);
+    const endAngle = Math.atan2(end[1] - center[1], end[0] - center[0]);
+    return { start, end, center, deltaDegrees: (endAngle - startAngle) * 180 / Math.PI };
+  }, { sx: startX, sy: startY, ex: endX, ey: endY, blockId: id! });
+  const rotationSamples: number[] = [];
+  for (let step = 1; step <= 8; step += 1) {
+    await page.mouse.move(
+      startX + (endX - startX) * step / 8,
+      startY + (endY - startY) * step / 8
+    );
+    rotationSamples.push(await page.evaluate(blockId =>
+      (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+    id!));
+  }
+  const trace = await page.evaluate(() => (window as Window & { __jabrRotateTrace?: { hostCapture: number; hostBubble: number; documentCapture: number; documentBubble: number; lastTarget: string; cancelBubble: boolean } }).__jabrRotateTrace);
+  console.log('JABR_ROTATE_POINTER_TRACE', { trace, rotationMath, rotationSamples });
   await page.mouse.up();
 
   await expect.poll(async () => page.evaluate(blockId =>
