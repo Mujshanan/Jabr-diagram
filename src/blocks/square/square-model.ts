@@ -4,12 +4,18 @@ import type {
 } from '@blocksuite/block-std/gfx';
 
 import { GfxCompatible } from '@blocksuite/block-std/gfx';
-import { BlockModel, BlockSchemaExtension, defineBlockSchema } from '@blocksuite/store';
+import {
+  BlockModel,
+  BlockSchemaExtension,
+  defineBlockSchema,
+} from '@blocksuite/store';
 
 export type SquareBlockProps = GfxCommonBlockProps & {
   fill: string;
   stroke: string;
   strokeWidth: number;
+  handleX: number;
+  handleY: number;
 };
 
 export const SquareBlockSchema = defineBlockSchema({
@@ -20,9 +26,11 @@ export const SquareBlockSchema = defineBlockSchema({
     lockedBySelf: false,
     rotate: 0,
     scale: 1,
-    fill: '#e8f1ff',
-    stroke: '#2563eb',
+    fill: 'var(--jabr-draw-square-fill)',
+    stroke: 'var(--jabr-draw-square-stroke)',
     strokeWidth: 2,
+    handleX: 50,
+    handleY: 50,
   }),
   metadata: {
     version: 1,
@@ -33,7 +41,8 @@ export const SquareBlockSchema = defineBlockSchema({
   toModel: () => new SquareBlockModel(),
 });
 
-export const SquareBlockSchemaExtension = BlockSchemaExtension(SquareBlockSchema);
+export const SquareBlockSchemaExtension =
+  BlockSchemaExtension(SquareBlockSchema);
 
 export class SquareBlockModel
   extends GfxCompatible<SquareBlockProps>(BlockModel)
