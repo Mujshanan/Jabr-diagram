@@ -380,22 +380,35 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
 
-  await page.evaluate(blockId => {
+  await page.evaluate(({ blockId, startX, startY, endX, endY }) => {
     const widget = document.querySelector('edgeless-selected-rect') as unknown as {
       gfx: { std: { host: EventTarget }; view: { get: (model: unknown) => unknown } };
     };
     const model = window.__jabrHost!.doc.getBlockById(blockId);
     const view = widget.gfx.view.get(model);
     const managerHost = widget.gfx.std.host;
+    const viewport = window.__jabrHost!.root.viewport;
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
+    const [x, y, width, height] = JSON.parse(model.xywh) as number[];
+    const modelStart = viewport.toModelCoordFromClientCoord([startX, startY]);
+    const modelEnd = viewport.toModelCoordFromClientCoord([endX, endY]);
+    const modelCenter = [x + width / 2, y + height / 2];
+    const a0 = Math.atan2(modelStart[1] - modelCenter[1], modelStart[0] - modelCenter[0]);
+    const a1 = Math.atan2(modelEnd[1] - modelCenter[1], modelEnd[0] - modelCenter[0]);
     (window as Window & { __jabrRotationDiag?: {
       viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
-      moves: number; rotations: number[];
+      moves: number; rotations: number[]; modelStart: number[]; modelEnd: number[];
+      modelCenter: number[]; modelDelta: number;
     } }).__jabrRotationDiag = {
       viewType: (view as { constructor: { name: string } } | null)?.constructor.name ?? null,
       managerHostTag: (managerHost as Element).tagName ?? managerHost.constructor.name,
       sameAsEditorHost: managerHost === (window.__jabrHost!.editor.std as unknown as { host: EventTarget }).host,
       moves: 0,
       rotations: [],
+      modelStart,
+      modelEnd,
+      modelCenter,
+      modelDelta: (a1 - a0) * 180 / Math.PI,
     };
     managerHost.addEventListener('pointermove', () => {
       const diag = (window as Window & { __jabrRotationDiag?: {
@@ -405,7 +418,7 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
       diag.moves += 1;
       diag.rotations.push((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate);
     }, false);
-  }, id!);
+  }, { blockId: id!, startX, startY, endX, endY });
 
   for (let step = 1; step <= 8; step += 1) {
     await page.mouse.move(
@@ -416,7 +429,8 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   const rotationDiag = await page.evaluate(() =>
     (window as Window & { __jabrRotationDiag?: {
       viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
-      moves: number; rotations: number[];
+      moves: number; rotations: number[]; modelStart: number[]; modelEnd: number[];
+      modelCenter: number[]; modelDelta: number;
     } }).__jabrRotationDiag
   );
   await page.mouse.up();
