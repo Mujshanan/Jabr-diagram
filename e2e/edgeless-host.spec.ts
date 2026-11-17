@@ -380,13 +380,47 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
 
+  await page.evaluate(blockId => {
+    const widget = document.querySelector('edgeless-selected-rect') as unknown as {
+      gfx: { std: { host: EventTarget }; view: { get: (model: unknown) => unknown } };
+    };
+    const model = window.__jabrHost!.doc.getBlockById(blockId);
+    const view = widget.gfx.view.get(model);
+    const managerHost = widget.gfx.std.host;
+    (window as Window & { __jabrRotationDiag?: {
+      viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
+      moves: number; rotations: number[];
+    } }).__jabrRotationDiag = {
+      viewType: (view as { constructor: { name: string } } | null)?.constructor.name ?? null,
+      managerHostTag: (managerHost as Element).tagName ?? managerHost.constructor.name,
+      sameAsEditorHost: managerHost === (window.__jabrHost!.editor.std as unknown as { host: EventTarget }).host,
+      moves: 0,
+      rotations: [],
+    };
+    managerHost.addEventListener('pointermove', () => {
+      const diag = (window as Window & { __jabrRotationDiag?: {
+        viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
+        moves: number; rotations: number[];
+      } }).__jabrRotationDiag!;
+      diag.moves += 1;
+      diag.rotations.push((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate);
+    }, false);
+  }, id!);
+
   for (let step = 1; step <= 8; step += 1) {
     await page.mouse.move(
       startX + (endX - startX) * step / 8,
       startY + (endY - startY) * step / 8
     );
   }
+  const rotationDiag = await page.evaluate(() =>
+    (window as Window & { __jabrRotationDiag?: {
+      viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
+      moves: number; rotations: number[];
+    } }).__jabrRotationDiag
+  );
   await page.mouse.up();
+  console.log('JABR_ROTATION_DIAG', rotationDiag);
 
   await expect.poll(async () => page.evaluate(({ blockId, rotation }) =>
     Math.abs((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate - rotation),
