@@ -179,8 +179,8 @@ const scheduleSnapshotSave = () => {
   }, 180);
 };
 
-root.selection.slots.updated.on(refreshPanels);
-doc.slots.blockUpdated.on(() => {
+root.selection.slots.updated.subscribe(refreshPanels);
+doc.slots.blockUpdated.subscribe(() => {
   refreshPanels();
   scheduleSnapshotSave();
 });
