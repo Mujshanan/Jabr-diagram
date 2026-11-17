@@ -93,9 +93,8 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   expect(blockId).not.toBeNull();
 
   // Exercise the real Edgeless viewport zoom rather than a CSS-only scale.
-  await page.evaluate(() => window.__jabrHost!.root.setZoomByAction('in'));
-  const zoom = await page.evaluate(() => window.__jabrHost!.root.zoom);
-  expect(zoom).toBeGreaterThan(1);
+  await page.evaluate(() => window.__jabrHost!.root.setZoomByStep(0.25));
+  await expect.poll(async () => page.evaluate(() => window.__jabrHost!.root.zoom)).toBeGreaterThan(1);
 
   const before = await page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
@@ -330,8 +329,22 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
 
   const centerX = resizedBounds!.x + resizedBounds!.width / 2;
   const centerY = resizedBounds!.y + resizedBounds!.height / 2;
-  const startX = rotateBounds!.x + rotateBounds!.width / 2;
-  const startY = rotateBounds!.y + rotateBounds!.height / 2;
+  // The rotate hit-area overlaps the resize hit-area at its center. Use the
+  // exposed top-right corner of the .rotate child so the real rotate handler
+  // receives pointerdown rather than the resize handler.
+  const rotationPoint = await rotateHandle.evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    const x = rect.x + rect.width * 0.75;
+    const y = rect.y + rect.height * 0.25;
+    return {
+      x,
+      y,
+      isRotateTarget: document.elementFromPoint(x, y) === node,
+    };
+  });
+  expect(rotationPoint.isRotateTarget).toBe(true);
+  const startX = rotationPoint.x;
+  const startY = rotationPoint.y;
   const radius = Math.hypot(startX - centerX, startY - centerY);
   const startAngle = Math.atan2(startY - centerY, startX - centerX);
   const endAngle = startAngle + Math.PI / 6;
