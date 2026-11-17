@@ -86,24 +86,7 @@ test('internal point drag commits one document update and Escape exits edit mode
   await svg.evaluate(node => {
     node.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
   });
-  const editState = await firstBlock.evaluate(node => {
-    const circle = node.querySelector('circle.jabr-square-handle') as SVGCircleElement | null;
-    const style = circle ? getComputedStyle(circle) : null;
-    const rect = circle?.getBoundingClientRect();
-    const bbox = circle?.getBBox();
-    return {
-      editing: (node as HTMLElement & { _editing?: boolean })._editing,
-      svgClass: node.querySelector('svg')?.getAttribute('class') ?? null,
-      circleExists: Boolean(circle),
-      circleRect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
-      circleBBox: bbox ? { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height } : null,
-      display: style?.display ?? null,
-      visibility: style?.visibility ?? null,
-      opacity: style?.opacity ?? null,
-      fill: style?.fill ?? null,
-    };
-  });
-  console.log('JABR_INTERNAL_EDIT_STATE', JSON.stringify(editState));
+  await expect(firstBlock.locator('svg')).toHaveClass(/editing/);
   const handle = firstBlock.locator('circle.jabr-square-handle');
   await expect(handle).toBeVisible();
 
