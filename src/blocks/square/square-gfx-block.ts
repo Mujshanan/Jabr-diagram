@@ -113,7 +113,15 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   private _exitEditMode() {
     if (!this._editing) return;
     this._editing = false;
+    const activePointerId = this._activePointerId;
     this._activePointerId = null;
+    const svg = this.shadowRoot?.querySelector('svg');
+    if (
+      activePointerId !== null &&
+      svg?.hasPointerCapture(activePointerId)
+    ) {
+      svg.releasePointerCapture(activePointerId);
+    }
     document.removeEventListener(
       'pointerdown',
       this._onDocumentPointerDown,
@@ -124,6 +132,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   private _onDoubleClick = (event: MouseEvent) => {
     event.stopPropagation();
     event.preventDefault();
+    const svg = event.currentTarget;
+    if (svg instanceof SVGSVGElement) svg.focus();
     this._enterEditMode();
   };
 
@@ -187,7 +197,10 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       svg.releasePointerCapture(event.pointerId);
     }
 
-    const next = this._draft;
+    const finalPoint =
+      svg instanceof SVGSVGElement ? this._toSvgPoint(event, svg) : null;
+    const next = finalPoint ?? this._draft;
+    this._draft = next;
     if (
       next.x !== this.model.handleX ||
       next.y !== this.model.handleY
