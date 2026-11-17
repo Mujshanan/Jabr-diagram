@@ -2,13 +2,14 @@ import type { SquareBlockModel } from './square-model.js';
 
 import { GfxBlockComponent } from '@blocksuite/block-std';
 import { css, html } from 'lit';
-import { state } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 
 type Point = { x: number; y: number };
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+@customElement('jabr-square-gfx')
 export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel> {
   static override styles = css`
     :host {
