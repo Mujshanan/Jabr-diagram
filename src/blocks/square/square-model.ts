@@ -13,8 +13,7 @@ export type SquareBlockProps = GfxCommonBlockProps & {
   fill: string;
   stroke: string;
   strokeWidth: number;
-  handleX: number;
-  handleY: number;
+  handlePoint: [number, number];
 };
 
 export const SquareBlockSchema = defineBlockSchema({
@@ -28,8 +27,7 @@ export const SquareBlockSchema = defineBlockSchema({
     fill: 'var(--jabr-draw-square-fill)',
     stroke: 'var(--jabr-draw-square-stroke)',
     strokeWidth: 2,
-    handleX: 50,
-    handleY: 50,
+    handlePoint: [50, 50],
   }),
   metadata: {
     version: 1,
