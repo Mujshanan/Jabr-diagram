@@ -12,7 +12,7 @@ The first host-integration spike is a **square Gfx block** for BlockSuite **0.19
 - Jabr supplies the SVG appearance, internal edit interaction and persistent style properties.
 - Pointer-to-model coordinate conversion accounts for the square's visual rotation.
 
-This is deliberately a host-integration spike, not yet the complete Jabr Draw engine or a standalone demo application.
+This is deliberately a host-integration spike, not yet the complete Jabr Draw engine. The repository now includes a standalone BlockSuite Edgeless host for live integration checks.
 
 ## Package
 
@@ -88,6 +88,26 @@ Do not turn each SVG path or annotation into a separate BlockSuite surface eleme
 In BlockSuite 0.19.5, `GfxBlockComponent` inherits `ShadowlessElement`. Its render root is the element itself, and Lit styles can be injected into the document head. These styles are **not** safely isolated in a shadow root.
 
 Consequently, every selector in the square component is prefixed with `jabr-square-gfx`. Avoid generic selectors such as `svg`, `.handle` or `.square` in this component's styles. Query rendered content from the component's light DOM (for example, `this.querySelector('svg')`), not from `this.shadowRoot`.
+
+## Run the standalone Edgeless host
+
+Use Node.js 22 and npm:
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:4173`. The host creates a real BlockSuite 0.19.5 document, registers the custom square spec alongside the standard Edgeless specs, inserts three sample squares, and mounts the Layers and Properties panels. Use **Add square** to insert more test blocks. Select a square in Layers, edit its properties, or double-click its SVG to drag the internal point.
+
+Run automated validation with:
+
+```bash
+npx playwright install chromium
+npm run validate
+```
+
+Validation includes TypeScript, geometry unit tests, a production Vite build, and Playwright browser tests for host mounting, layer selection, property persistence, insertion, and internal point editing.
 
 ## Host-side panels
 
