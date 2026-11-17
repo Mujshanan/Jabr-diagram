@@ -88,6 +88,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
 
   private _activePointerId: number | null = null;
 
+  private _rotationEventRoot: Document | ShadowRoot | null = null;
+
   private readonly _onDocumentPointerDown = (event: PointerEvent) => {
     if (!event.composedPath().includes(this)) {
       this._exitEditMode();
@@ -115,24 +117,27 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   override connectedCallback() {
     super.connectedCallback();
     this.addEventListener('keydown', this._onKeyDown);
-    // BlockSuite 0.19.5 enters its selected-rect rotate mode for custom
-    // GfxCompatible blocks but does not persist the resulting block rotation.
-    // Bridge that gesture here while keeping the figure renderer independent
-    // of the editor's selection implementation.
-    document.addEventListener('pointerdown', this._onRotationPointerDown, true);
-    document.addEventListener('pointermove', this._onRotationPointerMove, true);
-    document.addEventListener('pointerup', this._onRotationPointerUp, true);
-    document.addEventListener('pointercancel', this._onRotationPointerCancel, true);
+    // Listen on the component's tree root rather than document: the editor
+    // may host the Edgeless surface in a shadow tree, and these pointer events
+    // must be observed inside that same tree.
+    const root = this.getRootNode();
+    this._rotationEventRoot =
+      root instanceof Document || root instanceof ShadowRoot ? root : this.ownerDocument;
+    this._rotationEventRoot.addEventListener('pointerdown', this._onRotationPointerDown, true);
+    this._rotationEventRoot.addEventListener('pointermove', this._onRotationPointerMove, true);
+    this._rotationEventRoot.addEventListener('pointerup', this._onRotationPointerUp, true);
+    this._rotationEventRoot.addEventListener('pointercancel', this._onRotationPointerCancel, true);
   }
 
   override disconnectedCallback() {
     this._exitEditMode();
     this._clearRotationGesture();
     this.removeEventListener('keydown', this._onKeyDown);
-    document.removeEventListener('pointerdown', this._onRotationPointerDown, true);
-    document.removeEventListener('pointermove', this._onRotationPointerMove, true);
-    document.removeEventListener('pointerup', this._onRotationPointerUp, true);
-    document.removeEventListener('pointercancel', this._onRotationPointerCancel, true);
+    this._rotationEventRoot?.removeEventListener('pointerdown', this._onRotationPointerDown, true);
+    this._rotationEventRoot?.removeEventListener('pointermove', this._onRotationPointerMove, true);
+    this._rotationEventRoot?.removeEventListener('pointerup', this._onRotationPointerUp, true);
+    this._rotationEventRoot?.removeEventListener('pointercancel', this._onRotationPointerCancel, true);
+    this._rotationEventRoot = null;
     super.disconnectedCallback();
   }
 
@@ -157,16 +162,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     );
     if (!isRotateHandle) return;
 
-    const selections = this.std.selection.value;
-    const selectionIds = selections.map(selection => selection.blockId);
-    const isSelected = selectionIds.includes(this.model.id);
-    console.log('JABR_ROTATION_BRIDGE_POINTERDOWN', {
-      modelId: this.model.id,
-      selectionIds,
-      isSelected,
-      pointerId: event.pointerId,
-    });
-    if (!isSelected) return;
+    const selections = this.gfx.selection.selectedElements;
+    if (selections.length !== 1 || selections[0]?.id !== this.model.id) return;
 
     const [x, y, width, height] = JSON.parse(this.model.xywh) as number[];
     const center = { x: x + width / 2, y: y + height / 2 };
