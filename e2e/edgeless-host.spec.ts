@@ -105,7 +105,8 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   await page.evaluate(id => {
     const model = window.__jabrHost!.doc.getBlockById(id) as unknown as { xywh: string };
     const [x, y, width, height] = JSON.parse(model.xywh) as number[];
-    const viewport = window.__jabrHost!.root.viewport;
+    const viewport = widget.gfx.viewport;
+    const rootViewport = window.__jabrHost!.root.viewport;
     // Keep the selected square in the canvas area (not underneath the
     // inspector panel) while applying a real viewport zoom.
     viewport.setViewport(1.25, [x + width / 2, y + height / 2], false);
@@ -382,7 +383,7 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
 
   await page.evaluate(({ blockId, startX, startY, endX, endY }) => {
     const widget = document.querySelector('edgeless-selected-rect') as unknown as {
-      gfx: { std: { host: EventTarget }; view: { get: (model: unknown) => unknown } };
+      gfx: { std: { host: EventTarget }; view: { get: (model: unknown) => unknown }; viewport: { toModelCoordFromClientCoord: (point: [number, number]) => [number, number] } };
     };
     const model = window.__jabrHost!.doc.getBlockById(blockId);
     const view = widget.gfx.view.get(model);
@@ -398,7 +399,7 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     (window as Window & { __jabrRotationDiag?: {
       viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
       moves: number; rotations: number[]; modelStart: number[]; modelEnd: number[];
-      modelCenter: number[]; modelDelta: number;
+      modelCenter: number[]; modelDelta: number; sameViewportAsRoot: boolean; clientMoves: number[][];
     } }).__jabrRotationDiag = {
       viewType: (view as { constructor: { name: string } } | null)?.constructor.name ?? null,
       managerHostTag: (managerHost as Element).tagName ?? managerHost.constructor.name,
@@ -409,12 +410,16 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
       modelEnd,
       modelCenter,
       modelDelta: (a1 - a0) * 180 / Math.PI,
+      sameViewportAsRoot: viewport === rootViewport,
+      clientMoves: [],
     };
-    managerHost.addEventListener('pointermove', () => {
+    managerHost.addEventListener('pointermove', event => {
       const diag = (window as Window & { __jabrRotationDiag?: {
         viewType: string | null; managerHostTag: string; sameAsEditorHost: boolean;
-        moves: number; rotations: number[];
+        moves: number; rotations: number[]; clientMoves: number[][];
       } }).__jabrRotationDiag!;
+      const pointer = event as PointerEvent;
+      diag.clientMoves.push([pointer.clientX, pointer.clientY]);
       diag.moves += 1;
       diag.rotations.push((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate);
     }, false);
