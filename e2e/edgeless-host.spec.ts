@@ -32,6 +32,23 @@ test('selects a layer and persists property edits through the BlockSuite documen
   }, initial!.id)).toBe('#123456');
 
   await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
+
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect.poll(async () => page.evaluate(id => {
+    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { fill?: string } | null;
+    return model?.fill ?? null;
+  }, initial!.id)).toBe('#fff1e6');
+
+  await page.getByRole('button', { name: 'Redo' }).click();
+  await expect.poll(async () => page.evaluate(id => {
+    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { fill?: string } | null;
+    return model?.fill ?? null;
+  }, initial!.id)).toBe('#123456');
+
+  await expect(page.getByText(/Saved locally/)).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: 'Square 2' }).click();
+  await expect(page.locator('jabr-properties-panel input[type="color"]').first()).toHaveValue('#123456');
 });
 
 test('adds another Gfx square from the host toolbar', async ({ page }) => {
