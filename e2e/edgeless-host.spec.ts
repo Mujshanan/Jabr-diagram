@@ -535,7 +535,9 @@ test('internal point drag remains accurate at a non-default canvas zoom', async 
   const viewport = page.locator('affine-edgeless-viewport').first();
   await viewport.hover();
   const widthBeforeZoom = (await svg.boundingBox())!.width;
+  await page.keyboard.down('Control');
   await page.mouse.wheel(0, -420);
+  await page.keyboard.up('Control');
   await expect.poll(async () => (await svg.boundingBox())!.width).not.toBe(widthBeforeZoom);
 
   const id = await page.evaluate(() =>
