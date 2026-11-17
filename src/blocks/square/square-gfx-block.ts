@@ -263,8 +263,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     if (this._activePointerId !== event.pointerId) return;
     this._activePointerId = null;
     this._draft = {
-      x: this.model.handleX,
-      y: this.model.handleY,
+      x: this.model.handlePoint[0],
+      y: this.model.handlePoint[1],
     };
   };
 
