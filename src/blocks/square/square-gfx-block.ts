@@ -123,20 +123,20 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     const root = this.getRootNode();
     this._rotationEventRoot =
       root instanceof Document || root instanceof ShadowRoot ? root : this.ownerDocument;
-    this._rotationEventRoot.addEventListener('pointerdown', this._onRotationPointerDown, true);
-    this._rotationEventRoot.addEventListener('pointermove', this._onRotationPointerMove, true);
-    this._rotationEventRoot.addEventListener('pointerup', this._onRotationPointerUp, true);
-    this._rotationEventRoot.addEventListener('pointercancel', this._onRotationPointerCancel, true);
+    this._rotationEventRoot.addEventListener('pointerdown', this._onRotationPointerDown as EventListener, true);
+    this._rotationEventRoot.addEventListener('pointermove', this._onRotationPointerMove as EventListener, true);
+    this._rotationEventRoot.addEventListener('pointerup', this._onRotationPointerUp as EventListener, true);
+    this._rotationEventRoot.addEventListener('pointercancel', this._onRotationPointerCancel as EventListener, true);
   }
 
   override disconnectedCallback() {
     this._exitEditMode();
     this._clearRotationGesture();
     this.removeEventListener('keydown', this._onKeyDown);
-    this._rotationEventRoot?.removeEventListener('pointerdown', this._onRotationPointerDown, true);
-    this._rotationEventRoot?.removeEventListener('pointermove', this._onRotationPointerMove, true);
-    this._rotationEventRoot?.removeEventListener('pointerup', this._onRotationPointerUp, true);
-    this._rotationEventRoot?.removeEventListener('pointercancel', this._onRotationPointerCancel, true);
+    this._rotationEventRoot?.removeEventListener('pointerdown', this._onRotationPointerDown as EventListener, true);
+    this._rotationEventRoot?.removeEventListener('pointermove', this._onRotationPointerMove as EventListener, true);
+    this._rotationEventRoot?.removeEventListener('pointerup', this._onRotationPointerUp as EventListener, true);
+    this._rotationEventRoot?.removeEventListener('pointercancel', this._onRotationPointerCancel as EventListener, true);
     this._rotationEventRoot = null;
     super.disconnectedCallback();
   }
