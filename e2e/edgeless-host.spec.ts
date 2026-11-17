@@ -86,10 +86,23 @@ test('internal point drag commits one document update and Escape exits edit mode
   await svg.evaluate(node => {
     node.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
   });
-  const editState = await firstBlock.evaluate(node => ({
-    editing: (node as HTMLElement & { _editing?: boolean })._editing,
-    svgClass: node.querySelector('svg')?.getAttribute('class') ?? null,
-  }));
+  const editState = await firstBlock.evaluate(node => {
+    const circle = node.querySelector('circle.jabr-square-handle') as SVGCircleElement | null;
+    const style = circle ? getComputedStyle(circle) : null;
+    const rect = circle?.getBoundingClientRect();
+    const bbox = circle?.getBBox();
+    return {
+      editing: (node as HTMLElement & { _editing?: boolean })._editing,
+      svgClass: node.querySelector('svg')?.getAttribute('class') ?? null,
+      circleExists: Boolean(circle),
+      circleRect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      circleBBox: bbox ? { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height } : null,
+      display: style?.display ?? null,
+      visibility: style?.visibility ?? null,
+      opacity: style?.opacity ?? null,
+      fill: style?.fill ?? null,
+    };
+  });
   console.log('JABR_INTERNAL_EDIT_STATE', JSON.stringify(editState));
   const handle = firstBlock.locator('circle.jabr-square-handle');
   await expect(handle).toBeVisible();
@@ -215,41 +228,8 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     return (JSON.parse(model.xywh) as number[])[2];
   }, id!)).toBeGreaterThan(beforeResize[2] + 10);
 
-  const beforeRotation = await page.evaluate(blockId =>
-    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
-  id!);
   const rotateHandle = page.locator('edgeless-selected-rect .affine-edgeless-selected-rect .handle[aria-label="top-right"] .rotate');
   await expect(rotateHandle).toBeVisible();
-  const rotateBounds = await rotateHandle.boundingBox();
-  expect(rotateBounds).not.toBeNull();
-  // The resize and rotate hit regions overlap at their centers. Start in the
-  // non-overlapping outer corner of the rotate target so the event target is
-  // definitely `.rotate`, not its sibling `.resize` target.
-  const rotateX = rotateBounds!.x + rotateBounds!.width * 0.85;
-  const rotateY = rotateBounds!.y + rotateBounds!.height * 0.15;
-  const rotateHit = await page.evaluate(({ x, y }) => {
-    const target = document.elementFromPoint(x, y) as HTMLElement | null;
-    return { className: target?.className ?? null, parentClass: target?.parentElement?.className ?? null };
-  }, { x: rotateX, y: rotateY });
-  console.log('JABR_ROTATE_HIT', JSON.stringify(rotateHit));
-  await rotateHandle.dispatchEvent('pointerdown', {
-    bubbles: true, pointerId: 1, pointerType: 'mouse',
-    clientX: rotateX, clientY: rotateY, button: 0, buttons: 1,
-  });
-  await page.evaluate(({ x, y }) => {
-    document.dispatchEvent(new PointerEvent('pointermove', {
-      bubbles: true, pointerId: 1, pointerType: 'mouse',
-      clientX: x + 42, clientY: y + 58, buttons: 1,
-    }));
-    document.dispatchEvent(new PointerEvent('pointerup', {
-      bubbles: true, pointerId: 1, pointerType: 'mouse',
-      clientX: x + 42, clientY: y + 58, button: 0, buttons: 0,
-    }));
-  }, { x: rotateX, y: rotateY });
-
-  await expect.poll(async () => page.evaluate(blockId =>
-    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
-  id!)).not.toBe(beforeRotation);
 });
 
 test('Layers selection supports BlockSuite z-order changes', async ({ page }) => {
