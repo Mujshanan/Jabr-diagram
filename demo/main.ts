@@ -45,31 +45,12 @@ if (!restoredDoc) {
       title: new Text('Jabr Draw test surface'),
     });
     const surfaceId = freshDoc.addBlock('affine:surface', {}, pageId);
-    freshDoc.addBlock('jabr:square', {
-      xywh: '[80,80,150,150]',
-      fill: '#e8f1ff',
-      stroke: '#2563eb',
-    }, surfaceId);
-    freshDoc.addBlock('jabr:square', {
-      xywh: '[280,130,150,150]',
-      fill: '#fff1e6',
-      stroke: '#c66a27',
-      rotate: 12,
-    }, surfaceId);
-    freshDoc.addBlock('jabr:square', {
-      xywh: '[500,70,150,150]',
-      fill: '#e9f7ef',
-      stroke: '#25845a',
-      rotate: -8,
-    }, surfaceId);
   });
   restoredDoc = freshDoc;
 }
 
 if (!restoredDoc) throw new Error('Failed to initialize the Jabr Draw test document.');
 const doc: Doc = restoredDoc;
-doc.resetHistory();
-
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app mount element');
 
@@ -116,6 +97,21 @@ const sendBackwardButton = shell.querySelector<HTMLButtonElement>('#send-backwar
 
 await editor.updateComplete;
 const root = editor.std.get(EdgelessRootService);
+
+// Insert the sample Gfx blocks through the Edgeless layer service so each gets
+// a unique layer index and is registered in the surface's Gfx layer manager.
+if (!root.blocks.some(model => model.flavour === 'jabr:square')) {
+  root.addBlock('jabr:square', {
+    xywh: '[80,80,150,150]', fill: '#e8f1ff', stroke: '#2563eb',
+  }, root.surface);
+  root.addBlock('jabr:square', {
+    xywh: '[280,130,150,150]', fill: '#fff1e6', stroke: '#c66a27', rotate: 12,
+  }, root.surface);
+  root.addBlock('jabr:square', {
+    xywh: '[500,70,150,150]', fill: '#e9f7ef', stroke: '#25845a', rotate: -8,
+  }, root.surface);
+}
+doc.resetHistory();
 
 const updateHistoryControls = () => {
   undoButton.disabled = !doc.canUndo;
