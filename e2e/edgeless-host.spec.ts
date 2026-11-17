@@ -105,10 +105,10 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
 
   const before = await page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
-      handleX: number; handleY: number; xywh: string; rotate: number;
+      handlePoint: [number, number]; xywh: string; rotate: number;
     } | null;
     return model ? {
-      x: model.handleX, y: model.handleY, xywh: model.xywh, rotate: model.rotate,
+      x: model.handlePoint[0], y: model.handlePoint[1], xywh: model.xywh, rotate: model.rotate,
     } : null;
   }, blockId!);
   expect(before).not.toBeNull();
@@ -135,12 +135,12 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   await page.mouse.up();
 
   await expect.poll(async () => page.evaluate(id => {
-    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { handleX: number } | null;
-    return model?.handleX ?? null;
+    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { handlePoint: [number, number] } | null;
+    return model?.handlePoint[0] ?? null;
   }, blockId!)).not.toBe(before!.x);
   await expect.poll(async () => page.evaluate(id => {
-    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { handleY: number } | null;
-    return model?.handleY ?? null;
+    const model = window.__jabrHost?.doc.getBlockById(id) as unknown as { handlePoint: [number, number] } | null;
+    return model?.handlePoint[1] ?? null;
   }, blockId!)).not.toBe(before!.y);
 
   // The SVG handle should remain under the pointer even after viewport zoom
@@ -152,9 +152,9 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
 
   const after = await page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
-      handleX: number; handleY: number; xywh: string;
+      handlePoint: [number, number]; xywh: string;
     } | null;
-    return model ? { x: model.handleX, y: model.handleY, xywh: model.xywh } : null;
+    return model ? { x: model.handlePoint[0], y: model.handlePoint[1], xywh: model.xywh } : null;
   }, blockId!);
   expect(after).not.toBeNull();
   expect(after!.xywh).toBe(before!.xywh);
@@ -164,17 +164,17 @@ test('internal point drag is one undoable edit at non-default zoom and rotation'
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect.poll(async () => page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
-      handleX: number; handleY: number;
+      handlePoint: [number, number];
     } | null;
-    return model ? [model.handleX, model.handleY] : null;
+    return model ? [model.handlePoint[0], model.handlePoint[1]] : null;
   }, blockId!)).toEqual([before!.x, before!.y]);
 
   await page.getByRole('button', { name: 'Redo' }).click();
   await expect.poll(async () => page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
-      handleX: number; handleY: number;
+      handlePoint: [number, number];
     } | null;
-    return model ? [model.handleX, model.handleY] : null;
+    return model ? [model.handlePoint[0], model.handlePoint[1]] : null;
   }, blockId!)).toEqual([after!.x, after!.y]);
 
   await page.keyboard.press('Escape');
@@ -196,9 +196,9 @@ test('pointer cancellation discards an internal point drag without changing the 
   expect(blockId).not.toBeNull();
   const before = await page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
-      handleX: number; handleY: number;
+      handlePoint: [number, number];
     } | null;
-    return model ? [model.handleX, model.handleY] : null;
+    return model ? [model.handlePoint[0], model.handlePoint[1]] : null;
   }, blockId!);
 
   const handle = block.locator('circle.jabr-square-handle');
@@ -234,9 +234,9 @@ test('pointer cancellation discards an internal point drag without changing the 
 
   await expect.poll(async () => page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id) as unknown as {
-      handleX: number; handleY: number;
+      handlePoint: [number, number];
     } | null;
-    return model ? [model.handleX, model.handleY] : null;
+    return model ? [model.handlePoint[0], model.handlePoint[1]] : null;
   }, blockId!)).toEqual(before);
 
   const restoredHandle = await handle.boundingBox();
@@ -525,81 +525,3 @@ test('Layers selection supports BlockSuite z-order changes', async ({ page }) =>
 });
 
 
-test('internal point drag remains accurate at a non-default canvas zoom', async ({ page }) => {
-  await page.goto('/');
-  const firstBlock = page.locator('jabr-square-gfx').first();
-  await page.getByRole('button', { name: 'Square 1' }).click();
-  const svg = firstBlock.locator('svg');
-  await svg.dblclick();
-  await expect(svg).toHaveClass(/editing/);
-
-  const viewport = page.locator('affine-edgeless-viewport').first();
-  await viewport.hover();
-  const widthBeforeZoom = (await svg.boundingBox())!.width;
-  await page.keyboard.down('Control');
-  await page.mouse.wheel(0, -420);
-  await page.keyboard.up('Control');
-  await expect.poll(async () => (await svg.boundingBox())!.width).not.toBe(widthBeforeZoom);
-
-  const id = await page.evaluate(() =>
-    window.__jabrHost?.root.blocks.find(item => item.flavour === 'jabr:square')?.id ?? null
-  );
-  expect(id).not.toBeNull();
-  const before = await page.evaluate(blockId => {
-    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
-    return [...model.handlePoint];
-  }, id!);
-  const handle = firstBlock.locator('circle.jabr-square-handle');
-  const bounds = await handle.boundingBox();
-  expect(bounds).not.toBeNull();
-  const sx = bounds!.x + bounds!.width / 2;
-  const sy = bounds!.y + bounds!.height / 2;
-  await page.mouse.move(sx, sy);
-  await page.mouse.down();
-  await page.mouse.move(sx + 18, sy + 13, { steps: 4 });
-  await page.mouse.up();
-
-  await expect.poll(async () => page.evaluate(blockId => {
-    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
-    return model.handlePoint[0];
-  }, id!)).not.toBe(before[0]);
-});
-
-test('pointer cancellation discards the internal point draft without a document update', async ({ page }) => {
-  await page.goto('/');
-  const firstBlock = page.locator('jabr-square-gfx').first();
-  await page.getByRole('button', { name: 'Square 1' }).click();
-  const svg = firstBlock.locator('svg');
-  await svg.dblclick();
-  await expect(svg).toHaveClass(/editing/);
-
-  const id = await page.evaluate(() =>
-    window.__jabrHost?.root.blocks.find(item => item.flavour === 'jabr:square')?.id ?? null
-  );
-  expect(id).not.toBeNull();
-  const before = await page.evaluate(blockId => {
-    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
-    return [...model.handlePoint];
-  }, id!);
-
-  const handle = firstBlock.locator('circle.jabr-square-handle');
-  const bounds = await handle.boundingBox();
-  expect(bounds).not.toBeNull();
-  const sx = bounds!.x + bounds!.width / 2;
-  const sy = bounds!.y + bounds!.height / 2;
-  await page.mouse.move(sx, sy);
-  await page.mouse.down();
-  await page.mouse.move(sx + 35, sy + 25, { steps: 4 });
-  await page.evaluate(() => {
-    const svg = document.querySelector('jabr-square-gfx svg');
-    svg?.dispatchEvent(new PointerEvent('pointercancel', {
-      bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse',
-    }));
-  });
-  await page.mouse.up();
-
-  await expect.poll(async () => page.evaluate(blockId => {
-    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { handlePoint: [number, number] };
-    return model.handlePoint;
-  }, id!)).toEqual(before);
-});
