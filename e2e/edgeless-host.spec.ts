@@ -155,3 +155,70 @@ test('properties inspector updates outer dimensions and rotation', async ({ page
     (window.__jabrHost?.root.selection.selectedElements[0] as unknown as { rotate: number } | undefined)?.rotate ?? null
   )).toBe(27);
 });
+
+test('BlockSuite selection handles resize and rotate the outer Gfx object', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Square 1' }).click();
+
+  const id = await page.evaluate(() =>
+    window.__jabrHost?.root.blocks.find(model => model.flavour === 'jabr:square')?.id ?? null
+  );
+  expect(id).not.toBeNull();
+
+  const beforeResize = await page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
+    return JSON.parse(model.xywh) as number[];
+  }, id!);
+
+  const resizeHandle = page.locator('edgeless-selected-rect .affine-edgeless-selected-rect .handle[aria-label="bottom-right"] .resize');
+  await expect(resizeHandle).toBeVisible();
+  const resizeBounds = await resizeHandle.boundingBox();
+  expect(resizeBounds).not.toBeNull();
+  const resizeX = resizeBounds!.x + resizeBounds!.width / 2;
+  const resizeY = resizeBounds!.y + resizeBounds!.height / 2;
+  await page.mouse.move(resizeX, resizeY);
+  await page.mouse.down();
+  await page.mouse.move(resizeX + 32, resizeY + 26, { steps: 5 });
+  await page.mouse.up();
+
+  await expect.poll(async () => page.evaluate(blockId => {
+    const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as { xywh: string };
+    return (JSON.parse(model.xywh) as number[])[2];
+  }, id!)).toBeGreaterThan(beforeResize[2] + 10);
+
+  const beforeRotation = await page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+  id!);
+  const rotateHandle = page.locator('edgeless-selected-rect .affine-edgeless-selected-rect .handle[aria-label="top-right"] .rotate');
+  await expect(rotateHandle).toBeVisible();
+  const rotateBounds = await rotateHandle.boundingBox();
+  expect(rotateBounds).not.toBeNull();
+  const rotateX = rotateBounds!.x + rotateBounds!.width / 2;
+  const rotateY = rotateBounds!.y + rotateBounds!.height / 2;
+  await page.mouse.move(rotateX, rotateY);
+  await page.mouse.down();
+  await page.mouse.move(rotateX + 12, rotateY + 38, { steps: 5 });
+  await page.mouse.up();
+
+  await expect.poll(async () => page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+  id!)).not.toBe(beforeRotation);
+});
+
+test('Layers selection supports BlockSuite z-order changes', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Square 1' }).click();
+
+  const id = await page.evaluate(() =>
+    window.__jabrHost?.root.blocks.find(model => model.flavour === 'jabr:square')?.id ?? null
+  );
+  expect(id).not.toBeNull();
+  const before = await page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { index: string }).index,
+  id!);
+
+  await page.getByRole('button', { name: 'Bring forward' }).click();
+  await expect.poll(async () => page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { index: string }).index,
+  id!)).not.toBe(before);
+});
