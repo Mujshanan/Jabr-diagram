@@ -1,4 +1,4 @@
-name: Validate square Gfx prototype
+name: Validate Jabr Draw Edgeless prototype
 
 on:
   pull_request:
@@ -15,7 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - name: Install dependencies
         run: npm install --no-package-lock
-      - name: Typecheck and unit tests
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Typecheck, unit tests, build and browser integration tests
         run: npm run validate
