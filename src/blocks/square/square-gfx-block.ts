@@ -116,8 +116,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   private _enterEditMode() {
     if (this._editing) return;
     this._draft = {
-      x: this.model.handleX,
-      y: this.model.handleY,
+      x: this.model.handlePoint[0],
+      y: this.model.handlePoint[1],
     };
     this._editing = true;
     document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
@@ -230,13 +230,14 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     this._draft = next;
 
     if (
-      next.x !== this.model.handleX ||
-      next.y !== this.model.handleY
+      next.x !== this.model.handlePoint[0] ||
+      next.y !== this.model.handlePoint[1]
     ) {
       // One persistent Yjs update per completed drag, never per pointermove.
+      // Keep the point as one schema property so BlockSuite emits one
+      // property update and the drag is represented by one atomic change.
       this.doc.updateBlock(this.model, {
-        handleX: next.x,
-        handleY: next.y,
+        handlePoint: [next.x, next.y],
       });
     }
   };
@@ -253,8 +254,8 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
       svg.releasePointerCapture(event.pointerId);
     }
     this._draft = {
-      x: this.model.handleX,
-      y: this.model.handleY,
+      x: this.model.handlePoint[0],
+      y: this.model.handlePoint[1],
     };
   };
 
@@ -271,7 +272,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
     const { fill, stroke, strokeWidth, rotate } = this.model;
     const point = this._editing
       ? this._draft
-      : { x: this.model.handleX, y: this.model.handleY };
+      : { x: this.model.handlePoint[0], y: this.model.handlePoint[1] };
 
     return svg`
       <svg
