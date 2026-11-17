@@ -33,7 +33,7 @@ export const SquareBlockSchema = defineBlockSchema({
   }),
   metadata: {
     version: 1,
-    role: 'hub',
+    role: 'content',
     parent: ['affine:surface'],
     children: [],
   },
