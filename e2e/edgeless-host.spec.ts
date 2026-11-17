@@ -366,7 +366,7 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await page.mouse.up();
   await expect.poll(async () => page.evaluate(({ blockId, rotation }) =>
     Math.abs((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate - rotation),
-  { blockId: id!, rotation: beforeRotation }))).toBeGreaterThan(5);
+  { blockId: id!, rotation: beforeRotation })).toBeGreaterThan(5);
 
 
 });
