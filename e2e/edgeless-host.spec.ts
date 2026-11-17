@@ -374,11 +374,39 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   const endX = centerX + Math.cos(endAngle) * radius;
   const endY = centerY + Math.sin(endAngle) * radius;
 
+  const hostBounds = await page.locator('affine-editor-container').boundingBox();
+  const panelBounds = await page.locator('jabr-properties-panel').boundingBox();
+  console.log('JABR_ROTATE_GESTURE_DIAGNOSTICS', {
+    center: { x: centerX, y: centerY },
+    start: { x: startX, y: startY },
+    end: { x: endX, y: endY },
+    hostBounds,
+    panelBounds,
+    modelBefore: rotationBefore,
+  });
+  await page.evaluate(() => {
+    const host = document.querySelector('affine-editor-container');
+    if (!host) throw new Error('Edgeless host not found');
+    (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace = {
+      hostMoves: 0, documentMoves: 0, lastTarget: '',
+    };
+    host.addEventListener('pointermove', event => {
+      const trace = (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace!;
+      trace.hostMoves += 1;
+      trace.lastTarget = (event.target as Element)?.tagName ?? '';
+    }, true);
+    document.addEventListener('pointermove', () => {
+      const trace = (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace!;
+      trace.documentMoves += 1;
+    }, true);
+  });
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   expect(await page.evaluate(() => (window as Window & { __jabrRotatePointerDown?: boolean }).__jabrRotatePointerDown ?? false)).toBe(true);
   await expect(page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')).toHaveAttribute('data-mode', 'rotate');
   await page.mouse.move(endX, endY, { steps: 8 });
+  const trace = await page.evaluate(() => (window as Window & { __jabrRotateTrace?: { hostMoves: number; documentMoves: number; lastTarget: string } }).__jabrRotateTrace);
+  console.log('JABR_ROTATE_POINTER_TRACE', trace);
   await page.mouse.up();
 
   await expect.poll(async () => page.evaluate(blockId =>
