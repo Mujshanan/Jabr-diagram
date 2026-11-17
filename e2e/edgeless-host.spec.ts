@@ -74,7 +74,7 @@ test('internal point drag commits one document update and Escape exits edit mode
   await page.evaluate(id => {
     const host = window.__jabrHost!;
     (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount = 0;
-    host.doc.slots.blockUpdated.subscribe(payload => {
+    host.doc.slots.blockUpdated.on(payload => {
       if (payload.id === id && payload.type === 'update') {
         (window as Window & { __jabrUpdateCount?: number }).__jabrUpdateCount! += 1;
       }
