@@ -66,7 +66,7 @@ test('internal point drag commits one document update and Escape exits edit mode
   await expect(handle).toBeVisible();
 
   const blockId = await page.evaluate(() => {
-    const model = window.__jabrHost?.root.blocks.find(item => item.flavour === 'jabr:square');
+    const model = window.__jabrHost?.root.blocks.find(item => (item as unknown as { flavour?: string }).flavour === 'jabr:square');
     return model?.id ?? null;
   });
   expect(blockId).not.toBeNull();
@@ -110,7 +110,7 @@ test('normal canvas gestures select and move the outer Gfx block', async ({ page
   await page.goto('/');
   const block = page.locator('jabr-square-gfx').first();
   const id = await page.evaluate(() =>
-    window.__jabrHost?.root.blocks.find(model => model.flavour === 'jabr:square')?.id ?? null
+    window.__jabrHost?.root.blocks.find(model => (model as unknown as { flavour?: string }).flavour === 'jabr:square')?.id ?? null
   );
   expect(id).not.toBeNull();
 
