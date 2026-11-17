@@ -58,24 +58,20 @@ This prototype is Edgeless-only: its schema parent is `affine:surface`, and `Gfx
 
 The repository includes a standalone test host under `demo/`, built with `AffineEditorContainer` from BlockSuite 0.19.5. It appends `SquareBlockSpec` to the preset's existing `edgelessSpecs`, registers `SquareBlockSchema` alongside `AffineSchemas`, creates an `affine:page` plus `affine:surface`, and inserts multiple sample squares. The host mounts the Properties and Layers panels and connects them to `EdgelessRootService`, its Gfx selection manager, and the document update stream.
 
-The host also exposes Add Square, Fit View, Undo and Redo controls. It saves a BlockSuite JSON snapshot to browser local storage and restores that snapshot on reload, allowing the prototype's scalar block properties and surface hierarchy to be checked across a reload. This is test-host persistence only, not a production persistence provider or collaboration backend.
+The host also exposes Add Square, Fit View, Undo, Redo, Bring Forward and Send Backward controls. It saves a BlockSuite JSON snapshot to browser local storage and restores that snapshot on reload, allowing the prototype's scalar block properties and surface hierarchy to be checked across a reload. This is test-host persistence only, not a production persistence provider or collaboration backend.
 
 ## Automated validation
 
-GitHub Actions runs the TypeScript typecheck and unit tests for coordinate conversion, including rotation and clamping. These tests validate the geometry helper, not the complete BlockSuite host lifecycle.
+GitHub Actions runs:
 
-## Live editor validation still required
+- TypeScript typechecking across the core, host and Playwright tests.
+- Geometry unit tests for zero-degree, 90-degree and arbitrary rotations plus clamping.
+- A production Vite build.
+- Playwright Chromium integration tests covering Edgeless host mounting, schema/view registration, insertion under `affine:surface`, panel visibility, layer selection, property edits, undo/redo, local snapshot save/reload, adding squares, outer Gfx movement, resize handles, rotation handles, z-order changes, and internal point dragging with exactly one document update and Escape exit.
 
-1. Schema and view extension registration.
-2. Insertion under `affine:surface`.
-3. Selection, move, resize, rotate and z-order.
-4. SVG scaling and stroke behavior at different Gfx bounding-box sizes.
-5. Normal pointer pass-through to BlockSuite and edit-mode gesture isolation.
-6. Exactly one undo step for a completed point drag.
-7. Appearance changes through `updateAppearance()`, including undo/redo and collaboration.
-8. Pointer capture, Escape, outside click and pointercancel behavior.
-9. Correct pointer mapping at multiple zoom levels and CSS sizes.
-10. Light/dark theme token mapping, copy/paste and save/reload.
+## Remaining manual checks
+
+The automated suite does not yet verify every browser interaction. Manually check pointer cancellation and outside-click exit, copy/paste, zoom/stroke scaling at multiple viewport zoom levels, and light/dark theme behavior. Collaboration and cross-client concurrent editing belong to the later Yjs adapter milestone, not this Phase 1 host spike.
 
 ## Deliberate non-goals
 
