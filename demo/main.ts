@@ -27,44 +27,47 @@ const collection = new DocCollection({ schema });
 collection.meta.initialize();
 const job = new Job({ collection });
 
+let restoredDoc: Doc | undefined;
 const savedSnapshot = localStorage.getItem(STORAGE_KEY);
-let doc: Doc | undefined;
 if (savedSnapshot) {
   try {
-    doc = await job.snapshotToDoc(JSON.parse(savedSnapshot));
+    restoredDoc = await job.snapshotToDoc(JSON.parse(savedSnapshot));
   } catch (error) {
     console.warn('Could not restore the saved Jabr Draw test document; starting a fresh one.', error);
     localStorage.removeItem(STORAGE_KEY);
   }
 }
 
-if (!doc) {
-  doc = collection.createDoc();
-  await doc.load(() => {
-    const pageId = doc.addBlock('affine:page', {
+if (!restoredDoc) {
+  const freshDoc = collection.createDoc();
+  await freshDoc.load(() => {
+    const pageId = freshDoc.addBlock('affine:page', {
       title: new Text('Jabr Draw test surface'),
     });
-    const surfaceId = doc.addBlock('affine:surface', {}, pageId);
-    doc.addBlock('jabr:square', {
+    const surfaceId = freshDoc.addBlock('affine:surface', {}, pageId);
+    freshDoc.addBlock('jabr:square', {
       xywh: '[80,80,150,150]',
       fill: '#e8f1ff',
       stroke: '#2563eb',
     }, surfaceId);
-    doc.addBlock('jabr:square', {
+    freshDoc.addBlock('jabr:square', {
       xywh: '[280,130,150,150]',
       fill: '#fff1e6',
       stroke: '#c66a27',
       rotate: 12,
     }, surfaceId);
-    doc.addBlock('jabr:square', {
+    freshDoc.addBlock('jabr:square', {
       xywh: '[500,70,150,150]',
       fill: '#e9f7ef',
       stroke: '#25845a',
       rotate: -8,
     }, surfaceId);
   });
+  restoredDoc = freshDoc;
 }
 
+if (!restoredDoc) throw new Error('Failed to initialize the Jabr Draw test document.');
+const doc: Doc = restoredDoc;
 doc.resetHistory();
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -119,8 +122,10 @@ const refreshPanels = () => {
   const squares = root.blocks.filter(
     (model): model is SquareBlockModel => model.flavour === 'jabr:square'
   );
-  const selected = root.selection.selectedElements.find(
-    (model): model is SquareBlockModel => model.flavour === 'jabr:square'
+  const selectedId = root.selection.selectedIds[0];
+  const selected = root.blocks.find(
+    (model): model is SquareBlockModel =>
+      model.id === selectedId && model.flavour === 'jabr:square'
   ) ?? null;
 
   properties.model = selected;
@@ -174,11 +179,12 @@ const scheduleSnapshotSave = () => {
   }, 180);
 };
 
-root.selection.slots.updated.subscribe(refreshPanels);
-doc.slots.blockUpdated.subscribe(() => {
+root.selection.slots.updated.on(refreshPanels);
+doc.slots.blockUpdated.on(() => {
   refreshPanels();
   scheduleSnapshotSave();
 });
+doc.slots.historyUpdated.on(updateHistoryControls);
 refreshPanels();
 updateHistoryControls();
 
@@ -202,7 +208,7 @@ shell.querySelector<HTMLButtonElement>('#fit-view')!.addEventListener('click', (
 declare global {
   interface Window {
     __jabrHost?: {
-      doc: typeof doc;
+      doc: Doc;
       editor: AffineEditorContainer;
       root: typeof root;
     };
