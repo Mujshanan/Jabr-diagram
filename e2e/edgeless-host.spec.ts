@@ -190,7 +190,7 @@ test('pointer cancellation discards an internal point drag without changing the 
 
   await svg.evaluate(node => {
     node.addEventListener('pointerdown', event => {
-      (window as Window & { __jabrPointerId?: number }).__jabrPointerId = event.pointerId;
+      (window as Window & { __jabrPointerId?: number }).__jabrPointerId = (event as PointerEvent).pointerId;
     }, { capture: true, once: true });
   });
   await page.mouse.move(startX, startY);
@@ -282,6 +282,7 @@ test('properties inspector updates outer dimensions and rotation', async ({ page
 test('BlockSuite selection handles resize and rotate the outer Gfx object', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Square 1' }).click();
+  const block = page.locator('jabr-square-gfx').first();
 
   const id = await page.evaluate(() =>
     window.__jabrHost?.root.blocks.find(model => model.flavour === 'jabr:square')?.id ?? null
