@@ -21,7 +21,7 @@ The adapter expects the consuming application to use matching BlockSuite package
 - `@blocksuite/block-std@0.19.5`
 - `@blocksuite/store@0.19.5`
 - `@blocksuite/global@0.19.5`
-- `lit@3.1.2`
+- `lit@3.2.1`
 
 Install this package in the same dependency graph as the host editor. Do not install a second, different BlockSuite version alongside the host.
 
