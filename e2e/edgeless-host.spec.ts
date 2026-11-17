@@ -383,8 +383,8 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
 
-  await page.evaluate(({ blockId, startX, startY, endX, endY }) => {
-    const widget = document.querySelector('edgeless-selected-rect') as unknown as {
+  await page.locator('edgeless-selected-rect').first().evaluate((element, { blockId, startX, startY, endX, endY }) => {
+    const widget = element as unknown as {
       gfx: { std: { host: EventTarget }; view: { get: (model: unknown) => unknown }; viewport: { toModelCoordFromClientCoord: (point: [number, number]) => [number, number] } };
     };
     const model = window.__jabrHost!.doc.getBlockById(blockId) as unknown as {
