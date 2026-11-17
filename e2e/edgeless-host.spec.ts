@@ -207,11 +207,9 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
 
 test('Layers selection supports BlockSuite z-order changes', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Square 1' }).click();
+  await page.getByRole('button', { name: 'Square 2' }).click();
 
-  const id = await page.evaluate(() =>
-    window.__jabrHost?.root.blocks.find(model => model.flavour === 'jabr:square')?.id ?? null
-  );
+  const id = await page.evaluate(() => window.__jabrHost?.root.selection.selectedIds[0] ?? null);
   expect(id).not.toBeNull();
   const before = await page.evaluate(blockId =>
     (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { index: string }).index,
