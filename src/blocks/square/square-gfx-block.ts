@@ -71,10 +71,10 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   `;
 
   @state()
-  private accessor _editing = false;
+  private _editing = false;
 
   @state()
-  private accessor _draft: SquarePoint = { x: 50, y: 50 };
+  private _draft: SquarePoint = { x: 50, y: 50 };
 
   private _activePointerId: number | null = null;
 
