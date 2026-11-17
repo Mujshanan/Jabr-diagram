@@ -119,5 +119,4 @@ declare global {
 }
 window.__jabrHost = { doc, editor, root };
 
-render(html`<span></span>`, shell.querySelector('.canvas-label')!);
 status.textContent = 'Ready · select a square, then double-click its internal point to edit';
