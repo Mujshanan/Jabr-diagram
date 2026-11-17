@@ -9,7 +9,7 @@ The first host-integration spike is a **square Gfx block** for BlockSuite **0.19
 - `jabr:square` is a Gfx-compatible block model stored under `affine:surface`.
 - `jabr-square-gfx` is a `GfxBlockComponent` that renders the square as SVG.
 - BlockSuite owns the outer object's selection, movement, rotation, resizing, layer order and document persistence.
-- Jabr supplies the SVG appearance and square-specific properties (fill, stroke and stroke width).
+- Jabr supplies the SVG appearance, internal edit interaction and persistent style properties.
 
 This is deliberately a host-integration spike, not yet the complete Jabr Draw engine or a standalone demo application.
 
@@ -48,15 +48,17 @@ The block's schema declares `affine:surface` as its parent. It is therefore inte
 
 For this first spike, the square is one complete Gfx object:
 
-- Click/select, move, rotate and z-order are host operations.
-- The SVG is rendered inside the Gfx block.
-- The SVG preserves its square aspect ratio when the outer Gfx bounds are resized.
-- Double-click enters internal edit mode; drag the internal point to reposition it.
+- In normal mode, pointer events bubble to BlockSuite so the user can select and move the complete square.
+- Double-click enters Jabr's internal edit mode; drag the internal point to reposition it.
+- Internal handle events stop propagation and use pointer capture.
 - Escape or clicking outside exits internal edit mode.
 - The point drag is committed once on pointerup, not on every pointermove.
+- The SVG uses a responsive 100-by-100 viewBox, explicit 100% width/height and non-scaling strokes.
+
+Appearance changes are persisted using the component's `updateAppearance({ fill, stroke, strokeWidth })` method. A host property panel should call that method; it must not directly alter SVG presentation or mutate the model outside BlockSuite's document update API.
 
 Do not turn each SVG path or annotation into a separate BlockSuite surface element. Jabr Draw should own those internal objects in later milestones.
 
 ## Validation status
 
-This initial commit establishes the adapter source and type-check configuration. It still needs to be compiled against a real BlockSuite 0.19.5 host and exercised in an Edgeless editor. In particular, verify schema registration, insertion, selection, movement, resize handles, rotation, copy/paste, persistence and undo/redo before treating the adapter as integration-ready.
+This source prototype still needs to be compiled against a real BlockSuite 0.19.5 host and exercised in an Edgeless editor. Verify schema registration, insertion, bounding-box resize behavior, pointer pass-through, edit-mode isolation, undo/redo for both geometry and style, collaboration, copy/paste and persistence before treating the adapter as integration-ready.
