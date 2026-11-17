@@ -139,13 +139,13 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   private _onRotationPointerDown = (event: PointerEvent) => {
     if (this._editing || event.button !== 0 || this._rotationGesture) return;
 
-    const target = event.target;
-    if (
-      !(target instanceof Element) ||
-      !target.closest('edgeless-selected-rect .affine-edgeless-selected-rect .handle .rotate')
-    ) {
-      return;
-    }
+    // The selected-rect widget lives inside the editor's shadow tree.
+    // At document capture phase event.target is retargeted to the host, so
+    // inspect composedPath() to find the actual rotate handle.
+    const isRotateHandle = event.composedPath().some(
+      target => target instanceof Element && target.classList.contains('rotate')
+    );
+    if (!isRotateHandle) return;
 
     const selections = this.std.selection.value;
     if (selections.length !== 1 || selections[0]?.blockId !== this.model.id) {
