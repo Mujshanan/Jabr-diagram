@@ -35,4 +35,4 @@ layersPanel.onSelect = id => selectGfxElement(id);
 
 ## Current limits
 
-These are host-side UI components, not part of the Jabr Draw diagram model. The layers view currently supports hierarchy display and selection only. Visibility toggles, locking controls, grouping, drag-reordering, and automatic BlockSuite selection synchronization remain future host-adapter work. The standalone live Edgeless host is still required to verify the complete editor lifecycle.
+These are host-side UI components, not part of the Jabr Draw diagram model. The layers view currently supports hierarchy display and selection only. Visibility toggles, locking controls, grouping, drag-reordering, and automatic BlockSuite selection synchronization remain future host-adapter work. The standalone host is available in `demo/`; the browser suite covers the connected panel and internal-point workflows. Manual verification of full editor gestures remains required.
