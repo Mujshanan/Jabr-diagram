@@ -89,6 +89,10 @@ In BlockSuite 0.19.5, `GfxBlockComponent` inherits `ShadowlessElement`. Its rend
 
 Consequently, every selector in the square component is prefixed with `jabr-square-gfx`. Avoid generic selectors such as `svg`, `.handle` or `.square` in this component's styles. Query rendered content from the component's light DOM (for example, `this.querySelector('svg')`), not from `this.shadowRoot`.
 
+## Host-side panels
+
+Optional Lit components are exported as `jabr-properties-panel` and `jabr-layers-panel`. They are host-owned UI: the Edgeless host supplies the selected model, layer rows, selection callback, and a document-update callback. See [`docs/host-panels.md`](docs/host-panels.md) for the contract and wiring example. They do not couple the diagram core to BlockSuite selection services.
+
 ## Validation
 
 Automated validation is configured in GitHub Actions:
