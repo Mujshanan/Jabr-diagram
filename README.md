@@ -98,7 +98,7 @@ npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:4173`. The host creates a real BlockSuite 0.19.5 document, registers the custom square spec alongside the standard Edgeless specs, inserts three sample squares, and mounts the Layers and Properties panels. Use **Add square** to insert more test blocks. Select a square in Layers, edit its properties, or double-click its SVG to drag the internal point.
+Open `http://127.0.0.1:4173`. The host creates a real BlockSuite 0.19.5 document, registers the custom square spec alongside the standard Edgeless specs, inserts three sample squares, and mounts the Layers and Properties panels. Use **Add square** to insert more test blocks. Select a square in Layers, edit its properties, reorder it, or double-click its SVG to drag the internal point. Undo/Redo and local snapshot persistence are included for testing.
 
 Run automated validation with:
 
@@ -107,7 +107,7 @@ npx playwright install chromium
 npm run validate
 ```
 
-Validation includes TypeScript, geometry unit tests, a production Vite build, and Playwright browser tests for host mounting, layer selection, property persistence, insertion, and internal point editing.
+Validation includes TypeScript, geometry unit tests, a production Vite build, and Playwright browser tests for host mounting, layer selection, property persistence, undo/redo, snapshot reload, insertion, outer movement/resizing/rotation, z-order, and internal point editing.
 
 ## Host-side panels
 
