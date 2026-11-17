@@ -21,10 +21,10 @@ test('selects a layer and persists property edits through the BlockSuite documen
   });
   expect(initial).not.toBeNull();
 
-  await page.locator('jabr-properties-panel input[type="color"]').first().fill('#123456');
+  await page.locator('jabr-properties-panel input[type="color"]').first().evaluate((node) => {\n    const input = node as HTMLInputElement;\n    input.value = '#123456';\n    input.dispatchEvent(new Event('input', { bubbles: true }));\n  });
   await expect.poll(async () => page.evaluate(id => {
     const model = window.__jabrHost?.doc.getBlockById(id);
-    return model?.props.fill;
+    return (model as { fill?: string } | null)?.fill ?? null;
   }, initial!.id)).toBe('#123456');
 
   await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
