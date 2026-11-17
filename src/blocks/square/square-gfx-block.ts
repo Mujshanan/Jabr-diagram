@@ -234,7 +234,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
   };
 
   override renderGfxBlock() {
-    const { fill, stroke, strokeWidth } = this.model;
+    const { fill, stroke, strokeWidth, rotate } = this.model;
     const point = this._editing
       ? this._draft
       : { x: this.model.handleX, y: this.model.handleY };
@@ -254,6 +254,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
         @pointercancel=${this._onPointerCancel}
         @lostpointercapture=${this._onLostPointerCapture}
       >
+        <g transform="rotate(${rotate} 50 50)">
         <rect
           class="square"
           x="1"
@@ -291,6 +292,7 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
                 fill="var(--jabr-draw-square-handle)"
               ></circle>
             `}
+        </g>
       </svg>
     `;
   }
