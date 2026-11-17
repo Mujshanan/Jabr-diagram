@@ -10,16 +10,27 @@ The `jabr:square` model extends BlockSuite's `GfxCompatible` model wrapper and i
 
 The `jabr-square-gfx` custom element is registered with Lit and its view is mapped by `BlockViewExtension`. The component extends BlockSuite's `GfxBlockComponent`. BlockSuite owns outer selection, movement, resizing, rotation, z-order and document lifecycle. Jabr owns the SVG content and its internal editing behavior.
 
-## Interaction lifecycle
+## Bounding box and SVG contract
 
-- Single click remains available to BlockSuite for normal Gfx selection.
+The outer Gfx model owns the canvas-space bounding box (`xywh`), rotation and scale. The inner SVG uses a fixed logical coordinate system (`viewBox="0 0 100 100"`) with explicit `width="100%"` and `height="100%"`. `preserveAspectRatio="xMidYMid meet"` keeps the square geometry from stretching if the host bounding box is temporarily non-square. Shapes use `vector-effect="non-scaling-stroke"` so outlines remain visually consistent during host resizing and zooming.
+
+The SVG is content inside the Gfx wrapper; it must not write its display dimensions back into engineering parameters.
+
+## Interaction border
+
+- In normal mode, inner pointer events bubble to BlockSuite. Users can select and move the complete Gfx block with the host's normal canvas interactions.
 - Double-click enters Jabr's internal edit mode.
+- In edit mode, the internal handle's pointer events stop propagation and use pointer capture. This prevents the canvas from interpreting the handle drag as a block drag, pan or box selection.
+- Clicking inside the SVG but outside the handle does not initiate a Jabr drag. Escape or pointerdown outside the block exits edit mode.
+- Touch gesture suppression (`touch-action: none`) is scoped to edit mode so normal canvas navigation remains available.
+
+## Interaction lifecycle and Yjs
+
 - In edit mode, dragging the internal point uses local Lit `@state()` draft coordinates.
-- Pointer events for the internal handle stop propagation so the canvas does not interpret the drag as a canvas gesture. Touch gesture suppression (`touch-action: none`) is scoped to edit mode so normal canvas navigation remains available.
-- The SVG captures the active pointer, and releases it on pointerup.
-- Escape or a pointerdown outside the block exits edit mode.
-- A completed drag performs exactly one `doc.updateBlock()` call. Pointermove never writes to Yjs, so one drag is one persistent history operation.
-- Pointer cancellation discards the draft.
+- Pointermove never writes to Yjs.
+- Pointerup commits the completed point drag with one `doc.updateBlock()` call, so undo operates on the completed gesture rather than individual pointer samples.
+- Pointer cancellation/lost capture discards the draft.
+- Appearance updates use the public `updateAppearance({ fill, stroke, strokeWidth })` component method, which writes through `doc.updateBlock()`. A host toolbar/property panel should call this method rather than mutating the model or SVG styles directly. This persists style changes and syncs them through Yjs.
 
 ## Coordinates and responsive sizing
 
@@ -46,18 +57,18 @@ This prototype is Edgeless-only: its schema parent is `affine:surface`, and `Gfx
 
 ## Validation still required
 
-The source changes implement the intended safeguards, but they have not yet been compiled or exercised in a live BlockSuite 0.19.5 host. Verify:
+The source changes implement the interaction and persistence boundaries, but they have not yet been compiled or exercised in a live BlockSuite 0.19.5 host. Verify:
 
 1. Schema and view extension registration.
 2. Insertion under `affine:surface`.
 3. Selection, move, resize, rotate and z-order.
-4. Double-click edit mode and normal canvas selection outside it.
-5. Pointer capture when dragging beyond the SVG boundary.
-6. No canvas pan/box-select while dragging the internal handle.
-7. Exactly one undo step for a completed drag; no persistent update during pointermove.
-8. Escape, outside click and pointercancel behavior.
+4. SVG scaling and stroke behavior at different Gfx bounding-box sizes.
+5. Normal pointer pass-through to BlockSuite and edit-mode gesture isolation.
+6. Exactly one undo step for a completed point drag.
+7. Appearance changes through `updateAppearance()`, including undo/redo and collaboration.
+8. Pointer capture, Escape, outside click and pointercancel behavior.
 9. Correct pointer mapping at multiple zoom levels and CSS sizes.
-10. Light/dark theme token mapping, copy/paste, save/reload and redo.
+10. Light/dark theme token mapping, copy/paste and save/reload.
 
 ## Deliberate non-goals
 
