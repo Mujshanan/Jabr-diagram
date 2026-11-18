@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "diagram:square-golden",
+  "coordinateSystem": { "unit": "gfx-model", "origin": "top-left", "yAxis": "down" },
+  "elements": [
+    {
+      "id": "square-golden",
+      "kind": "rectangle",
+      "bounds": { "x": 20, "y": 30, "width": 160, "height": 120 },
+      "transform": { "translateX": 41.07695154586736, "translateY":": 21.07695154586736, "rotationDegrees": 30, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#e8f1ff", "stroke": "#2563eb", "strokeWidth": 2 },
+      "extensions": { "jabr.square": { "index": "a0", "lockedBySelf": false, "scale": 1, "handlePoint": [50, 50] } }
+    }
+  ]
+}
