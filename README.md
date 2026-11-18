@@ -1,8 +1,18 @@
-# Jabr Draw
+# Jabr Diagram
 
-Jabr Draw is an independent engineering-figure engine. Its core figure models and renderers are intended to remain independent of BlockSuite; host integrations live in adapters.
+Jabr Diagram is the independent engineering-diagram subsystem of Jabr. Its canonical document model, geometry and diagram operations remain independent of BlockSuite and rendering frameworks; host integrations live in adapters.
 
 The first host-integration spike is a **square Gfx block** for BlockSuite **0.19.5**.
+
+## Jabr ecosystem boundary
+
+- **Jabr Diagram** owns renderer-independent diagram document semantics, element identity, geometry, transforms, constraints and diagram-specific operations.
+- **Jabr-kernel** may supply genuinely generic IDs, revisions, snapshots, diagnostics or spans where useful; Diagram must not move diagram-domain concepts into Kernel.
+- **Jabr-engine** is the worksheet calculation orchestrator (a separate planned repository, not this Diagram subsystem). It may consume Diagram APIs when worksheet calculations need diagram-derived inputs, but Diagram does not own worksheet dependency graphs or calculation scheduling.
+- **Jabr-UI** owns production BlockSuite custom blocks and the complete worksheet experience. This repository's BlockSuite/Lit host is a development adapter and demonstration harness only.
+- **Jabr Math** owns mathematical parsing/evaluation; Diagram does not parse worksheet expressions.
+
+Keep the existing Gfx prototype intact while the renderer-independent model and geometry contract mature. Do not create placeholder Rust crates or force a React rewrite.
 
 ## Current prototype
 
@@ -12,7 +22,7 @@ The first host-integration spike is a **square Gfx block** for BlockSuite **0.19
 - Jabr supplies the SVG appearance, internal edit interaction and persistent style properties.
 - Pointer-to-model coordinate conversion accounts for the square's visual rotation.
 
-This is deliberately a host-integration spike, not yet the complete Jabr Draw engine. The repository now includes a standalone BlockSuite Edgeless host for live integration checks.
+This is deliberately a host-integration spike, not yet the complete Jabr Diagram engine. The repository now includes a standalone BlockSuite Edgeless host for live integration checks.
 
 ## Package
 
@@ -81,7 +91,7 @@ For this first spike, the square is one complete Gfx object:
 
 Appearance changes must be persisted through BlockSuite's document update API (`doc.updateBlock`). The component's `updateAppearance({ fill, stroke, strokeWidth })` helper is a convenience wrapper around that API. Host panels should pass patches to the host and must not mutate SVG presentation directly.
 
-Do not turn each SVG path or annotation into a separate BlockSuite surface element. Jabr Draw should own those internal objects in later milestones.
+Do not turn each SVG path or annotation into a separate BlockSuite surface element. Jabr Diagram should own those internal objects in later milestones.
 
 ## Styling and BlockSuite's shadowless component base
 
@@ -141,6 +151,6 @@ Deliberate non-goals:
 
 - No general-purpose CAD editor.
 - No D3 dependency.
-- No worksheet/Jabr CLI variable bridge yet.
+- No Engine/Math variable-binding bridge yet.
 - No page-mode block.
 - No Yjs-native internal diagram graph yet; this prototype stores only a few scalar block properties.
