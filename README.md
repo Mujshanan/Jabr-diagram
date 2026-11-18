@@ -144,3 +144,7 @@ Deliberate non-goals:
 - No worksheet/Jabr CLI variable bridge yet.
 - No page-mode block.
 - No Yjs-native internal diagram graph yet; this prototype stores only a few scalar block properties.
+
+## Standalone engine playground
+
+A dependency-free SVG interaction harness is available at [engine-demo/index.html](./engine-demo/index.html). It exercises basic shapes, selection, geometry inspection and SVG export without BlockSuite. Keep it as a disposable engine-development surface; the production diagram block and unified worksheet UI belong in Jabr-UI.
