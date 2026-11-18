@@ -5,7 +5,7 @@
   "elements": [{
     "id": "square-golden", "kind": "rectangle",
     "bounds": { "x": 20, "y": 30, "width": 160, "height": 120 },
-    "transform": { "translateX": 58.39745962155614, "translateY": -37.94228634059948, "rotationDegrees": 30, "scaleX": 1, "scaleY": 1 },
+    "transform": { "translateX": 58.397459621556116, "translateY": -37.94228634059948, "rotationDegrees": 30, "scaleX": 1, "scaleY": 1 },
     "style": { "fill": "#e8f1ff", "stroke": "#2563eb", "strokeWidth": 2 },
     "extensions": { "jabr.square": { "index": "a0", "lockedBySelf": false, "scale": 1, "handlePoint": [50, 50] } }
   }]
