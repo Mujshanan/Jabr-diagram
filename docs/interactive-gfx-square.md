@@ -8,7 +8,7 @@ Prove that Jabr Draw can provide one custom engineering-figure object to BlockSu
 
 The `jabr:square` model extends BlockSuite's `GfxCompatible` model wrapper and implements the Gfx geometry contract. Its `xywh`, index, rotation and lock state describe the outer Gfx object. Square-specific persistent properties are fill, stroke, stroke width and an internal editable point stored atomically as `handlePoint: [x, y]`.
 
-The `jabr-square-gfx` custom element is registered with Lit and its view is mapped by `BlockViewExtension`. The component extends BlockSuite's `GfxBlockComponent`. BlockSuite owns outer selection, movement, resizing, rotation, z-order and document lifecycle. Jabr owns the SVG content and its internal editing behavior.
+The `jabr-square-gfx` custom element is registered with Lit and its view is mapped by `BlockViewExtension`. The component extends BlockSuite's `GfxBlockComponent`. BlockSuite supplies outer selection, movement, resize handles, z-order and document lifecycle. The Jabr Gfx adapter bridges the rotate-handle pointer gesture into the outer model's persisted rotation. Jabr owns the SVG content and its internal editing behavior.
 
 ## Bounding box and SVG contract
 
@@ -32,7 +32,7 @@ The SVG is content inside the Gfx wrapper; it must not write its display dimensi
 - Pointermove never writes to Yjs.
 - Pointerup commits the completed point drag with one `doc.updateBlock()` call updating the single `handlePoint` property. Keeping both coordinates in one property avoids duplicate per-property update notifications and makes the drag one atomic document change.
 - Pointer cancellation/lost capture discards the draft.
-- Appearance updates use the public `updateAppearance({ fill, stroke, strokeWidth })` component method, which writes through `doc.updateBlock()`. A host toolbar/property panel should call this method rather than mutating the model or SVG styles directly. This persists style changes and syncs them through Yjs.
+- Appearance updates use the `updateAppearance({ fill, stroke, strokeWidth })` convenience method or a host-supplied patch callback that writes through `doc.updateBlock()`. Never mutate SVG styles as a substitute for a document update. This prototype uses BlockSuite's Yjs-backed document, but does not configure a collaboration provider or claim cross-client synchronization.
 
 ## Coordinates and rotation
 
