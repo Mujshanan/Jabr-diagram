@@ -15,6 +15,8 @@ export type DiagramStyle = {
 };
 type ElementBase = {
   id: string;
+  /** Namespaced, JSON-safe adapter metadata; renderers must ignore unknown keys. */
+  extensions?: Record<string, unknown>;
   transform?: Transform;
   style?: DiagramStyle;
 };
