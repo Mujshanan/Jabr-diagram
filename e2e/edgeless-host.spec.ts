@@ -357,6 +357,11 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   const endX = centerX + Math.cos(endAngle) * radius;
   const endY = centerY + Math.sin(endAngle) * radius;
 
+  // BlockSuite determines the active transform mode on pointerdown. Merely
+  // locating the rotate handle does not activate rotation; begin the gesture
+  // before asserting the mode, then keep the pointer down for the full arc.
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
   await expect(
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
