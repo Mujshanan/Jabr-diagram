@@ -29,7 +29,10 @@ export function documentToSquareGfx(document:DiagramDocument):SquareGfxSnapshot{
 
 /** Adapter entry point typed against the actual BlockSuite model. */
 export function squareBlockModelToDocument(model: SquareBlockModel): DiagramDocument {
-  return squareGfxToDocument(model);
+  return squareGfxToDocument({
+    ...model,
+    lockedBySelf: model.lockedBySelf ?? false,
+  });
 }
 /** Returns persisted Gfx properties; the host remains responsible for applying them via doc.updateBlock. */
 export function documentToSquareGfxProps(document: DiagramDocument): SquareGfxSnapshot {
