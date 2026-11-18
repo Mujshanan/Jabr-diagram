@@ -8,7 +8,7 @@ The first host-integration spike is a **square Gfx block** for BlockSuite **0.19
 
 - `jabr:square` is a Gfx-compatible block model stored under `affine:surface`.
 - `jabr-square-gfx` is a `GfxBlockComponent` that renders the square as SVG.
-- BlockSuite owns the outer object's selection, movement, rotation, resizing, layer order and document lifecycle.
+- BlockSuite supplies outer-object selection, movement, resize handles, layer order and document lifecycle; the Jabr Gfx adapter bridges the rotate-handle pointer gesture into the square model's persisted rotation.
 - Jabr supplies the SVG appearance, internal edit interaction and persistent style properties.
 - Pointer-to-model coordinate conversion accounts for the square's visual rotation.
 
@@ -79,7 +79,7 @@ For this first spike, the square is one complete Gfx object:
 - The SVG uses a responsive 100-by-100 viewBox, explicit 100% width/height and non-scaling strokes.
 - Pointer coordinates are inverse-rotated into the square's model coordinate system before persistence.
 
-Appearance changes are persisted using the component's `updateAppearance({ fill, stroke, strokeWidth })` method. A host property panel should call that method; it must not directly alter SVG presentation or mutate the model outside BlockSuite's document update API.
+Appearance changes must be persisted through BlockSuite's document update API (`doc.updateBlock`). The component's `updateAppearance({ fill, stroke, strokeWidth })` helper is a convenience wrapper around that API. Host panels should pass patches to the host and must not mutate SVG presentation directly.
 
 Do not turn each SVG path or annotation into a separate BlockSuite surface element. Jabr Draw should own those internal objects in later milestones.
 
@@ -128,7 +128,7 @@ The automated checks do not replace live-editor validation. Before treating this
 4. SVG scaling and stroke behavior at different Gfx bounding-box sizes.
 5. Normal pointer pass-through and edit-mode gesture isolation.
 6. Exactly one undo step for a completed point drag.
-7. Appearance changes through `updateAppearance()`, including undo/redo and collaboration.
+7. Appearance changes through BlockSuite document updates, including undo/redo. Cross-client collaboration is deferred to the later Yjs adapter milestone.
 8. Pointer capture, Escape, outside click and pointercancel behavior.
 9. Correct pointer mapping at multiple zoom levels and rotation angles (covered by browser tests).
 10. Light/dark theme mapping, copy/paste and save/reload.
