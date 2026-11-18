@@ -253,7 +253,7 @@ test('outside click exits internal edit mode without deleting the outer Gfx bloc
   await page.keyboard.press('Delete');
   await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
 
-  await page.locator('.canvas-label').click();
+  await page.locator('.brand').click();
   await expect(svg).not.toHaveClass(/editing/);
   await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
 });
