@@ -1,0 +1,39 @@
+{
+  "name": "@jabr/draw-blocksuite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BlockSuite 0.19.5 Gfx block adapter and standalone Edgeless validation host for Jabr Draw.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e": "playwright test",
+    "validate": "npm run typecheck && npm test && npm run build && npm run test:e2e"
+  },
+  "peerDependencies": {
+    "@blocksuite/block-std": "0.19.5",
+    "@blocksuite/store": "0.19.5",
+    "@blocksuite/global": "0.19.5",
+    "lit": "3.2.1"
+  },
+  "dependencies": {
+    "@blocksuite/blocks": "0.19.5",
+    "@blocksuite/presets": "0.19.5",
+    "@blocksuite/block-std": "0.19.5",
+    "@blocksuite/store": "0.19.5",
+    "@blocksuite/global": "0.19.5",
+    "lit": "3.2.1",
+    "@blocksuite/icons": "2.1.75",
+    "@toeverything/theme": "1.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.51.0",
+    "@types/node": "22.13.4",
+    "typescript": "5.5.4",
+    "vite": "5.4.14",
+    "vitest": "2.1.8",
+    "rollup": "4.29.1"
+  }
+}
