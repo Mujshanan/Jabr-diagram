@@ -1,4 +1,5 @@
 import type { DiagramDocument, RectangleElement } from '../../model/diagram-document.js';
+import type { SquareBlockModel } from './square-model.js';
 
 /** Structural snapshot of the persisted jabr:square BlockSuite properties. */
 export type SquareGfxSnapshot = {
@@ -24,4 +25,13 @@ export function documentToSquareGfx(document:DiagramDocument):SquareGfxSnapshot{
  const t=element.transform;const rotate=t?.rotationDegrees??0;const cx=element.bounds.x+element.bounds.width/2,cy=element.bounds.y+element.bounds.height/2;const expected=rotationTranslation(cx,cy,rotate);
  if(t&& (Math.abs(t.scaleX-1)>1e-9||Math.abs(t.scaleY-1)>1e-9||Math.abs(t.translateX-expected.x)>1e-7||Math.abs(t.translateY-expected.y)>1e-7))throw new Error('Transform is not representable by Gfx square rotation');
  return {id:element.id,xywh:JSON.stringify([element.bounds.x,element.bounds.y,element.bounds.width,element.bounds.height]),index:meta.index,lockedBySelf:meta.lockedBySelf,rotate,scale:meta.scale,fill:element.style?.fill??'none',stroke:element.style?.stroke??'none',strokeWidth:element.style?.strokeWidth??0,handlePoint:[meta.handlePoint[0] as number,meta.handlePoint[1] as number]};
+}
+
+/** Adapter entry point typed against the actual BlockSuite model. */
+export function squareBlockModelToDocument(model: SquareBlockModel): DiagramDocument {
+  return squareGfxToDocument(model);
+}
+/** Returns persisted Gfx properties; the host remains responsible for applying them via doc.updateBlock. */
+export function documentToSquareGfxProps(document: DiagramDocument): SquareGfxSnapshot {
+  return documentToSquareGfx(document);
 }
