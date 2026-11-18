@@ -6,6 +6,10 @@ Jabr Diagram is an independently developable engineering-diagram subsystem. Its 
 
 The current implementation is a BlockSuite 0.19.5 Gfx integration prototype. It is a development host/adapter, not yet the complete renderer-independent diagram engine.
 
+## Jabr ecosystem ownership (2026-11-18)
+
+Jabr Diagram owns the renderer-independent diagram model, geometry and diagram-domain operations. Kernel may provide generic primitives, but Diagram owns its own element identity and semantics unless a shared primitive is demonstrably useful. The planned Jabr-engine repository is the worksheet calculation orchestrator; it is not the same thing as the Diagram domain engine. Jabr-engine may consume Diagram APIs, but Diagram does not own worksheet graph construction, Math parsing, or recalculation. Jabr-UI owns production custom blocks and document persistence. The current Lit/BlockSuite Gfx host remains a development adapter.
+
 ## Requirements
 
 - Node.js 22
