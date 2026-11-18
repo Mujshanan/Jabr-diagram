@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101923">
+  <meta name="description" content="Jabr Diagram engine workbench prototype">
+  <title>Jabr Diagram — Engine Workbench</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Jabr Diagram home"><span class="brand-mark">J</span><span>Jabr <b>Diagram</b><small>ENGINE WORKBENCH</small></span></a>
+    <div class="document-name"><span class="dot"></span> Untitled diagram <span class="prototype-tag">UI prototype</span></div>
+    <div class="top-actions"><span class="status">Local demo · not saved</span><button id="export-svg" class="button button-primary">Export SVG</button></div>
+  </header>
+  <main class="workspace">
+    <aside class="panel tools-panel">
+      <div class="panel-heading"><span>TOOLS</span><kbd>V</kbd></div>
+      <div class="tool-grid" role="toolbar" aria-label="Diagram tools">
+        <button class="tool active" data-tool="select" title="Select (V)"><span>↖</span><small>Select</small></button>
+        <button class="tool" data-tool="rect" title="Rectangle (R)"><span>▭</span><small>Rectangle</small></button>
+        <button class="tool" data-tool="ellipse" title="Ellipse (O)"><span>◯</span><small>Ellipse</small></button>
+        <button class="tool" data-tool="line" title="Line (L)"><span>／</span><small>Line</small></button>
+        <button class="tool" data-tool="text" title="Text (T)"><span>T</span><small>Text</small></button>
+      </div>
+      <div class="panel-separator"></div>
+      <div class="panel-heading"><span>LAYERS</span><button id="clear-canvas" class="icon-button" title="Clear canvas">⌫</button></div>
+      <ul id="layer-list" class="layer-list"><li class="empty-layer">No objects yet</li></ul>
+      <div class="sidebar-note"><b>Engine boundary</b><p>This is a lightweight interaction harness. Geometry, constraints, serialization and collaboration belong to the diagram engine.</p></div>
+    </aside>
+    <section class="canvas-region">
+      <div class="canvas-toolbar"><div><span class="crumb">Document</span><span class="crumb-current"> / Diagram 1</span></div><div class="canvas-actions"><button id="zoom-out" class="icon-button" aria-label="Zoom out">−</button><span id="zoom-label">100%</span><button id="zoom-in" class="icon-button" aria-label="Zoom in">+</button><button id="fit-view" class="icon-button" aria-label="Fit view">Fit</button></div></div>
+      <div class="canvas-wrap">
+        <svg id="diagram-canvas" viewBox="0 0 1000 650" role="img" aria-label="Diagram drawing canvas">
+          <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e8edf2" stroke-width="1"/></pattern></defs>
+          <rect width="1000" height="650" fill="#fff"/><rect width="1000" height="650" fill="url(#grid)"/>
+          <g id="diagram-objects"></g>
+        </svg>
+        <div id="canvas-hint" class="canvas-hint">Choose a shape tool, then click the canvas to add an object.</div>
+      </div>
+      <div class="canvas-footer"><span id="object-count">0 objects</span><span>SVG workspace · 1000 × 650 units</span></div>
+    </section>
+    <aside class="panel inspector-panel">
+      <div class="panel-heading"><span>INSPECTOR</span><span id="selection-state" class="muted">Nothing selected</span></div>
+      <div id="empty-inspector" class="inspector-empty"><div class="empty-icon">◇</div><b>Select an object</b><p>Choose an item on the canvas to inspect its properties.</p></div>
+      <form id="inspector" hidden>
+        <label>Object name<input id="prop-name" type="text"></label>
+        <div class="field-row"><label>X<input id="prop-x" type="number" step="1"></label><label>Y<input id="prop-y" type="number" step="1"></label></div>
+        <div class="field-row"><label>Width<input id="prop-width" type="number" min="1" step="1"></label><label>Height<input id="prop-height" type="number" min="1" step="1"></label></div>
+        <label>Stroke<input id="prop-stroke" type="color" value="#356b91"></label>
+        <label>Fill<input id="prop-fill" type="color" value="#eaf3f8"></label>
+        <label>Stroke width<input id="prop-stroke-width" type="number" min="0" max="20" value="2"></label>
+        <button id="delete-object" type="button" class="button button-danger">Delete object</button>
+      </form>
+      <div class="sidebar-note inspector-note"><b>Prototype limitations</b><p>Edits are held in memory only. No document format or engine API is assumed by this UI.</p></div>
+    </aside>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
