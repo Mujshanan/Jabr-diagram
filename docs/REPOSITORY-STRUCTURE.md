@@ -1,13 +1,13 @@
 # Jabr Diagram Repository Structure
 
-**Audit baseline:** `feat/interactive-gfx-square` at `0d155e08b7ffbe41551421bde0e7f77d328cc7d5`  
+**Audit baseline:** merged `main` at `d5f8a241c2d1505563e241adfa8474a6581866dd`  
 **Purpose:** Preserve the validated BlockSuite Gfx prototype while separating the future renderer-independent diagram engine from host adapters and demonstration UI.
 
 ## 1. Audit findings
 
-The current `main` branch is a small standalone engine-demo baseline. The open pull request **#1 — Prototype interactive BlockSuite Gfx square** contains the more complete, independently validated Gfx integration prototype. This standardization branch is based on that PR's head so it does not discard or duplicate the working implementation.
+The current `main` branch includes the independently validated BlockSuite Gfx integration prototype merged from PR #1. The prototype is a host adapter and demonstration, not yet the renderer-independent diagram engine.
 
-The PR #1 head contains 31 tree entries, including:
+The merged main tree contains 31 entries, including:
 
 ```text
 Jabr-diagram/
