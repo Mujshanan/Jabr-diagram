@@ -1,11 +1,16 @@
-name: Validate Jabr Draw Edgeless prototype
+name: Validate Jabr Diagram Edgeless prototype
 
 on:
   pull_request:
   push:
     branches:
       - main
-      - feat/interactive-gfx-square
+      - "feat/**"
+      - "docs/**"
+      - "chore/**"
+
+permissions:
+  contents: read
 
 jobs:
   validate:
