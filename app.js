@@ -1,0 +1,35 @@
+const svgNS="http://www.w3.org/2000/svg";
+const canvas=document.querySelector("#diagram-canvas");
+const layer=document.querySelector("#diagram-objects");
+const layerList=document.querySelector("#layer-list");
+const inspector=document.querySelector("#inspector");
+const emptyInspector=document.querySelector("#empty-inspector");
+const hint=document.querySelector("#canvas-hint");
+const objects=[];
+let activeTool="select",selected=null,drag=null,zoom=1,nextId=1;
+const fields={name:"#prop-name",x:"#prop-x",y:"#prop-y",width:"#prop-width",height:"#prop-height",stroke:"#prop-stroke",fill:"#prop-fill",strokeWidth:"#prop-stroke-width"};
+const get=(selector)=>document.querySelector(selector);
+function point(event){const p=canvas.createSVGPoint();p.x=event.clientX;p.y=event.clientY;return p.matrixTransform(canvas.getScreenCTM().inverse());}
+function shapeFor(item){let el;if(item.type==="rect"){el=document.createElementNS(svgNS,"rect");el.setAttribute("rx","7");}else if(item.type==="ellipse"){el=document.createElementNS(svgNS,"ellipse");}else if(item.type==="line"){el=document.createElementNS(svgNS,"line");}else{el=document.createElementNS(svgNS,"text");el.textContent=item.text||"Text";el.setAttribute("font-size","22");el.setAttribute("font-family","Inter, sans-serif");}
+ el.classList.add("diagram-object");el.dataset.id=item.id;applyGeometry(el,item);applyStyle(el,item);return el;}
+function applyGeometry(el,item){if(item.type==="ellipse"){el.setAttribute("cx",item.x+item.width/2);el.setAttribute("cy",item.y+item.height/2);el.setAttribute("rx",item.width/2);el.setAttribute("ry",item.height/2);}else if(item.type==="line"){el.setAttribute("x1",item.x);el.setAttribute("y1",item.y);el.setAttribute("x2",item.x+item.width);el.setAttribute("y2",item.y+item.height);}else{el.setAttribute("x",item.x);el.setAttribute("y",item.type==="text"?item.y+22:item.y);if(item.type!=="text"){el.setAttribute("width",item.width);el.setAttribute("height",item.height);}}}
+function applyStyle(el,item){el.setAttribute("stroke",item.stroke);el.setAttribute("stroke-width",item.strokeWidth);el.setAttribute("fill",item.type==="line"||item.type==="text"?"none":item.fill);if(item.type==="text")el.setAttribute("fill",item.stroke);}
+function render(){layer.replaceChildren();for(const item of objects){const el=shapeFor(item);if(item.id===selected)el.classList.add("is-selected");el.addEventListener("pointerdown",onObjectDown);layer.append(el);}renderLayers();get("#object-count").textContent=objects.length+" object"+(objects.length===1?"":"s");hint.hidden=objects.length>0;}
+function renderLayers(){layerList.replaceChildren();if(!objects.length){const li=document.createElement("li");li.className="empty-layer";li.textContent="No objects yet";layerList.append(li);return;}[...objects].reverse().forEach(item=>{const li=document.createElement("li");li.className=item.id===selected?"selected":"";const icon=document.createElement("span");icon.className="layer-icon";icon.textContent=item.type==="rect"?"▭":item.type==="ellipse"?"◯":item.type==="line"?"／":"T";const name=document.createElement("span");name.textContent=item.name;li.append(icon,name);li.addEventListener("click",()=>select(item.id));layerList.append(li);});}
+function select(id){selected=id;const item=objects.find(o=>o.id===id);emptyInspector.hidden=!!item;inspector.hidden=!item;get("#selection-state").textContent=item?"Selected": "Nothing selected";if(item){for(const [key,selector] of Object.entries(fields))get(selector).value=item[key]??"";}render();}
+function addObject(type,p){const item={id:"obj-"+nextId++,type,name:type[0].toUpperCase()+type.slice(1)+" "+nextId,x:Math.round(p.x),y:Math.round(p.y),width:type==="line"?130: type==="text"?100:150,height:type==="line"?0:type==="text"?30:90,stroke:"#356b91",fill:"#eaf3f8",strokeWidth:2,text:"Text"};objects.push(item);select(item.id);}
+function onObjectDown(event){if(activeTool!=="select")return;event.stopPropagation();const id=event.currentTarget.dataset.id;select(id);const p=point(event);const item=objects.find(o=>o.id===id);drag={id,start:p,origin:{x:item.x,y:item.y}};canvas.setPointerCapture(event.pointerId);}
+canvas.addEventListener("pointerdown",event=>{if(event.target!==canvas&&event.target.tagName!=="rect")return;const p=point(event);if(activeTool==="select"){select(null);return;}addObject(activeTool,p);activeTool="select";document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("active",b.dataset.tool==="select"));});
+canvas.addEventListener("pointermove",event=>{if(!drag)return;const item=objects.find(o=>o.id===drag.id);if(!item)return;const p=point(event);item.x=Math.round(drag.origin.x+(p.x-drag.start.x));item.y=Math.round(drag.origin.y+(p.y-drag.start.y));const el=layer.querySelector('[data-id="'+drag.id+'"]');if(el)applyGeometry(el,item);for(const [key,selector] of Object.entries(fields))get(selector).value=item[key]??"";});
+canvas.addEventListener("pointerup",()=>{drag=null;renderLayers();});
+document.querySelectorAll(".tool").forEach(button=>button.addEventListener("click",()=>{activeTool=button.dataset.tool;document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("active",b===button));hint.textContent=activeTool==="select"?"Select an object to move or edit it.":"Click the canvas to place a "+activeTool+".";hint.hidden=false;}));
+for(const [key,selector] of Object.entries(fields)){get(selector).addEventListener("input",event=>{const item=objects.find(o=>o.id===selected);if(!item)return;item[key]=["x","y","width","height","strokeWidth"].includes(key)?Number(event.target.value):event.target.value;const el=layer.querySelector('[data-id="'+selected+'"]');if(el){applyGeometry(el,item);applyStyle(el,item);}renderLayers();});}
+get("#delete-object").addEventListener("click",()=>{const i=objects.findIndex(o=>o.id===selected);if(i>=0)objects.splice(i,1);select(null);});
+get("#clear-canvas").addEventListener("click",()=>{objects.splice(0);select(null);});
+get("#zoom-in").addEventListener("click",()=>setZoom(Math.min(1.5,zoom+.1)));
+get("#zoom-out").addEventListener("click",()=>setZoom(Math.max(.5,zoom-.1)));
+get("#fit-view").addEventListener("click",()=>setZoom(1));
+function setZoom(value){zoom=value;canvas.style.width=(100*zoom)+"%";get("#zoom-label").textContent=Math.round(zoom*100)+"%";}
+get("#export-svg").addEventListener("click",()=>{const clone=canvas.cloneNode(true);clone.querySelector("#grid")?.remove();const markup=new XMLSerializer().serializeToString(clone);const blob=new Blob([markup],{type:"image/svg+xml"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="jabr-diagram.svg";a.click();URL.revokeObjectURL(url);});
+document.addEventListener("keydown",event=>{if(event.target instanceof HTMLInputElement)return;const key=event.key.toLowerCase();const tools={v:"select",r:"rect",o:"ellipse",l:"line",t:"text"};if(tools[key]){activeTool=tools[key];document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===activeTool));}if((event.key==="Delete"||event.key==="Backspace")&&selected)get("#delete-object").click();});
+render();
