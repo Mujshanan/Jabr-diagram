@@ -143,15 +143,6 @@ export class SquareGfxBlockComponent extends GfxBlockComponent<SquareBlockModel>
 
   private _onRotationPointerDown = (event: PointerEvent) => {
     const path = event.composedPath();
-    console.log('JABR_ROTATION_POINTERDOWN_CAPTURE', {
-      modelId: this.model.id,
-      targetTag: (event.target as Element | null)?.tagName ?? null,
-      composed: event.composed,
-      path: path.filter(node => node instanceof Element).map(node => {
-        const element = node as Element;
-        return { tag: element.tagName, className: element.getAttribute('class') };
-      }).slice(0, 12),
-    });
     if (this._editing || event.button !== 0 || this._rotationGesture) return;
 
     // The selected-rect widget lives inside the editor's shadow tree.
