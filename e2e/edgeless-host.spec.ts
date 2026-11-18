@@ -2,26 +2,6 @@ import { expect, test } from '@playwright/test';
 
 test('mounts the BlockSuite Edgeless host and the three starter squares', async ({ page }) => {
   await page.goto('/');
-  const diagnostics = await page.evaluate(() => {
-    const host = window.__jabrHost!;
-    return {
-      sampleIds: host.sampleIds,
-      rootBlockIds: host.root.blocks.map(model => model.id),
-      surfaceId: host.root.surface.id,
-      models: host.sampleIds.map(id => {
-        const model = host.doc.getBlockById(id);
-        const parent = model ? host.doc.getParent(model) : null;
-        return {
-          id,
-          flavour: model?.flavour ?? null,
-          modelType: model?.constructor.name ?? null,
-          parentFlavour: parent?.flavour ?? null,
-          parentType: parent?.constructor.name ?? null,
-        };
-      }),
-    };
-  });
-  console.log('JABR_EDGELESS_DIAGNOSTICS', JSON.stringify(diagnostics));
   await expect(page.locator('affine-editor-container')).toBeVisible();
   await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
   await expect(page.getByText('Layers', { exact: true })).toBeVisible();
@@ -377,63 +357,6 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   const endX = centerX + Math.cos(endAngle) * radius;
   const endY = centerY + Math.sin(endAngle) * radius;
 
-  await page.evaluate(() => {
-    document.addEventListener('pointerdown', event => {
-      const path = event.composedPath();
-      const hasRotateClass = path.some(
-        target => target instanceof Element && target.classList.contains('rotate')
-      );
-      if (hasRotateClass) {
-        console.log('JABR_ROTATE_EVENT_PATH', {
-          path: path.map(target => target instanceof Element
-            ? { tag: target.tagName, className: target.className?.toString?.() ?? '' }
-            : String(target)),
-          selectionIds: window.__jabrHost?.root.selection.selectedIds ?? [],
-          stdSelection: window.__jabrHost?.editor.std.selection.value.map(selection => selection.blockId),
-        });
-      }
-    }, true);
-  });
-  const [squareRoot, selectedRectRoot] = await Promise.all([
-    page.locator('jabr-square-gfx').first().evaluate(element => {
-      const root = element.getRootNode() as ShadowRoot;
-      return { type: root.constructor.name, host: root.host?.tagName ?? null };
-    }),
-    page.locator('edgeless-selected-rect').first().evaluate(element => {
-      const root = element.getRootNode() as ShadowRoot;
-      return { type: root.constructor.name, host: root.host?.tagName ?? null };
-    }),
-  ]);
-  await page.evaluate(() => {
-    (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace = [];
-    document.addEventListener('pointerdown', event => {
-      const path = event.composedPath().filter(node => node instanceof Element).map(node => {
-        const element = node as Element;
-        return element.tagName + '.' + (element.getAttribute('class') ?? '');
-      });
-      (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace!.push({
-        composed: event.composed,
-        target: (event.target as Element).tagName,
-        path,
-      });
-    }, true);
-  });
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  const pointerTrace = await page.evaluate(() =>
-    (window as Window & { __jabrPointerTrace?: Array<{ composed: boolean; target: string; path: string[] }> }).__jabrPointerTrace
-  );
-  const selectionInfo = await page.locator('jabr-square-gfx').first().evaluate((element, blockId) => {
-    const gfx = (element as unknown as { gfx: { selection: { selectedElements: Array<{ id: string }> } } }).gfx;
-    return {
-      modelId: blockId,
-      gfxSelectionIds: gfx.selection.selectedElements.map(item => item.id),
-      rootSelectionIds: window.__jabrHost!.root.selection.selectedElements.map(item => item.id),
-      eventRootType: (element as unknown as { _rotationEventRoot?: { constructor: { name: string } } })._rotationEventRoot?.constructor.name ?? null,
-      eventRootIsDocument: (element as unknown as { _rotationEventRoot?: unknown })._rotationEventRoot === document,
-    };
-  }, id!);
-  console.log('JABR_SHADOW_POINTER_TRACE', JSON.stringify({ squareRoot, selectedRectRoot, pointerTrace, selectionInfo }));
   await expect(
     page.locator('edgeless-selected-rect .affine-edgeless-selected-rect')
   ).toHaveAttribute('data-mode', 'rotate');
