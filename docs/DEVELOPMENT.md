@@ -93,3 +93,10 @@ See [REPOSITORY-STRUCTURE.md](REPOSITORY-STRUCTURE.md) for the audited tree and 
 5. Keep changes scoped; do not combine engine extraction with host UI rewrites.
 6. Report exact commands and observed results. Do not claim checks passed unless run.
 7. Do not merge or retarget pull requests without explicit authorization.
+
+
+## Renderer-independent Diagram document v1
+
+The initial versioned document model and Square Gfx adapter are specified in [DIAGRAM-DOCUMENT-V1.md](api/DIAGRAM-DOCUMENT-V1.md). The model is independent of BlockSuite; the existing square adapter is a host-specific conversion layer. Keep Gfx-only properties in namespaced extension metadata and reject lossy reverse conversions.
+
+Validation for this milestone includes the model unit tests, golden fixture round-trip, TypeScript typecheck, production build and Chromium Edgeless integration tests. This model is not yet the final diagram engine or a Rust/WASM bridge.
