@@ -240,6 +240,24 @@ test('pointer cancellation discards an internal point drag without changing the 
   await expect(handle).toHaveCount(0);
 });
 
+test('outside click exits internal edit mode without deleting the outer Gfx block', async ({ page }) => {
+  await page.goto('/');
+  const block = page.locator('jabr-square-gfx').first();
+  const svg = block.locator('svg');
+
+  await svg.evaluate(node => {
+    node.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+  });
+  await expect(svg).toHaveClass(/editing/);
+
+  await page.keyboard.press('Delete');
+  await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
+
+  await page.locator('.canvas-label').click();
+  await expect(svg).not.toHaveClass(/editing/);
+  await expect(page.locator('jabr-square-gfx')).toHaveCount(3);
+});
+
 test('normal canvas gestures select and move the outer Gfx block', async ({ page }) => {
   await page.goto('/');
   const block = page.locator('jabr-square-gfx').first();
@@ -377,6 +395,23 @@ test('BlockSuite selection handles resize and rotate the outer Gfx object', asyn
   await expect.poll(async () => page.evaluate(({ blockId, rotation }) =>
     Math.abs((window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate - rotation),
   { blockId: id!, rotation: beforeRotation })).toBeGreaterThan(5);
+
+  const afterRotation = await page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+  id!);
+  // The pointer arc is exactly 30 degrees; allow a small browser-coordinate tolerance.
+  expect(Math.abs((afterRotation - beforeRotation) - 30)).toBeLessThan(3);
+
+  // Rotation must be a single coherent history operation.
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect.poll(async () => page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+  id!)).toBeCloseTo(beforeRotation, 0);
+
+  await page.getByRole('button', { name: 'Redo' }).click();
+  await expect.poll(async () => page.evaluate(blockId =>
+    (window.__jabrHost!.doc.getBlockById(blockId) as unknown as { rotate: number }).rotate,
+  id!)).toBeCloseTo(afterRotation, 0);
 
 });
 
