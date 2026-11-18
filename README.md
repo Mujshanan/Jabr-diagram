@@ -151,6 +151,6 @@ Deliberate non-goals:
 
 - No general-purpose CAD editor.
 - No D3 dependency.
-- No worksheet/Jabr CLI variable bridge yet.
+- No Engine/Math variable-binding bridge yet.
 - No page-mode block.
 - No Yjs-native internal diagram graph yet; this prototype stores only a few scalar block properties.
